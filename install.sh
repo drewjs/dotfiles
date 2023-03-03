@@ -1,4 +1,8 @@
-#!/bin/bash
+#!/usr/bin/bash -i
+
+set -ex
+
+sudo apt-get update && sudo apt-get upgrade -y
 
 chsh -s $(which zsh)
 
