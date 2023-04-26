@@ -55,7 +55,7 @@ require('lazy').setup({
   },
 
   -- theme
-  { 
+  {
     'rose-pine/neovim',
     name = 'rose-pine',
     config = function()
@@ -67,7 +67,7 @@ require('lazy').setup({
   },
 
   -- fuzzy finder
-  { 
+  {
     'nvim-telescope/telescope.nvim',
     version = '*',
     dependencies = { 'nvim-lua/plenary.nvim' },
@@ -106,12 +106,7 @@ require('lazy').setup({
 -- See `:help telescope` and `:help telescope.setup()`
 require('telescope').setup {
   defaults = {
-    mappings = {
-      i = {
-	['<C-u>'] = false,
-	['<C-d>'] = false,
-      },
-    },
+    mappings = {},
   },
 }
 
@@ -167,8 +162,6 @@ local on_attach = function(_, bufnr)
   nmap('<leader>D', vim.lsp.buf.type_definition, 'Type [D]efinition')
   nmap('<leader>ds', require('telescope.builtin').lsp_document_symbols, '[D]ocument [S]ymbols')
   nmap('<leader>ws', require('telescope.builtin').lsp_dynamic_workspace_symbols, '[W]orkspace [S]ymbols')
-
-  -- See `:help K` for why this keymap
   nmap('K', vim.lsp.buf.hover, 'Hover Documentation')
   nmap('<C-k>', vim.lsp.buf.signature_help, 'Signature Documentation')
 
@@ -211,6 +204,11 @@ mason_lspconfig.setup_handlers {
   end,
 }
 
+vim.diagnostic.config({
+  virtual_text = true,
+  -- severity_sort = true,
+})
+
 -- setup autocomplete
 local cmp = require('cmp')
 local luasnip = require('luasnip')
@@ -223,17 +221,37 @@ cmp.setup {
       luasnip.lsp_expand(args.body)
     end,
   },
+  window = {
+    documentation = {
+      max_height = 15,
+      max_width = 60,
+    },
+  },
   mapping = cmp.mapping.preset.insert({
     ['<C-b>'] = cmp.mapping.scroll_docs(-4),
     ['<C-f>'] = cmp.mapping.scroll_docs(4),
     ['<C-Space>'] = cmp.mapping.complete(),
     ['<C-e>'] = cmp.mapping.abort(),
-    ['<CR>'] = cmp.mapping.confirm({ select = true }),
+    ['<C-y'] = cmp.mapping.confirm({ select = true }),
   }),
   sources = {
     { name = 'nvim_lsp' },
     { name = 'luasnip' },
-  }
+  },
+  formatting = {
+    fields = {'abbr', 'menu', 'kind'},
+    format = function(entry, item)
+      local short_name = {
+	nvim_lsp = 'LSP',
+	nvim_lua = 'nvim'
+      }
+
+      local menu_name = short_name[entry.source.name] or entry.source.name
+
+      item.menu = string.format('[%s]', menu_name)
+      return item
+    end,
+  },
 }
 
 require('drewjs.options')
