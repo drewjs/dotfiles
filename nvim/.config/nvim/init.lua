@@ -1,4 +1,4 @@
---  NOTE: Must happen before plugins are required (otherwise wrong leader will be used)
+--  NOTE: Must happen before plugins are requiredlsp action
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
@@ -17,14 +17,11 @@ end
 vim.opt.rtp:prepend(lazypath)
 
 require('lazy').setup({
-
   -- git
-  {
-    'tpope/vim-fugitive',
-    keys = {
-      { '<leader>gs', '<cmd>Git<cr>', desc = 'Show git' },
-    },
-  },
+  'tpope/vim-fugitive',
+
+  -- detect tabstop and shiftwidth automatically
+  'tpope/vim-sleuth',
 
   -- history
   {
@@ -33,9 +30,6 @@ require('lazy').setup({
       { '<leader>u', '<cmd>UndotreeToggle<cr>', desc = '[U]ndo tree' },
     }
   },
-
-  -- detect tabstop and shiftwidth automatically
-  'tpope/vim-sleuth',
 
   -- navigation
   {
@@ -46,7 +40,6 @@ require('lazy').setup({
 
       vim.keymap.set("n", "<leader>a", mark.add_file)
       vim.keymap.set("n", "<C-e>", ui.toggle_quick_menu)
-
       vim.keymap.set("n", "<C-h>", function() ui.nav_file(1) end)
       vim.keymap.set("n", "<C-j>", function() ui.nav_file(2) end)
       vim.keymap.set("n", "<C-k>", function() ui.nav_file(3) end)
@@ -57,13 +50,13 @@ require('lazy').setup({
   -- theme
   {
     'rose-pine/neovim',
-    name = 'rose-pine',
+    priority = 1000,
     config = function()
-      vim.cmd.colorscheme('rose-pine')
+      vim.cmd.colorscheme 'rose-pine'
       vim.api.nvim_set_hl(0, 'Normal', { bg = 'none' })
       vim.api.nvim_set_hl(0, 'NormalFloat', { bg = 'none' })
       vim.api.nvim_set_hl(0, 'SignColumn', { bg = 'none' })
-    end
+    end,
   },
 
   -- fuzzy finder
@@ -81,13 +74,14 @@ require('lazy').setup({
     end,
   },
 
-  -- syntax tree
+  -- Highlight, edit, and navigate code
   {
     'nvim-treesitter/nvim-treesitter',
     build = ":TSUpdate",
   },
 
-  { -- LSP Configuration & Plugins
+  -- LSP Configuration & Plugins
+  {
     'neovim/nvim-lspconfig',
     dependencies = {
       { 'williamboman/mason.nvim', config = true },
@@ -100,6 +94,8 @@ require('lazy').setup({
     'hrsh7th/nvim-cmp',
     dependencies = { 'hrsh7th/cmp-nvim-lsp', 'L3MON4D3/LuaSnip', 'saadparwaiz1/cmp_luasnip' },
   },
+
+  { import = 'drewjs.plugins' },
 })
 
 -- [[ Configure Telescope ]]
@@ -122,14 +118,14 @@ vim.keymap.set('n', '<leader>/', function()
     winblend = 10,
     previewer = false,
   })
-end, { desc = '[/] Search current buffer' })
+end, { desc = '[/] Fuzzy search buffer' })
 
+vim.keymap.set('n', '<C-p>', require('telescope.builtin').git_files, { desc = 'Search Git Files' })
 vim.keymap.set('n', '<leader>sf', require('telescope.builtin').find_files, { desc = '[S]earch [F]iles' })
 vim.keymap.set('n', '<leader>sh', require('telescope.builtin').help_tags, { desc = '[S]earch [H]elp' })
 vim.keymap.set('n', '<leader>sw', require('telescope.builtin').grep_string, { desc = '[S]earch current [W]ord' })
 vim.keymap.set('n', '<leader>sg', require('telescope.builtin').live_grep, { desc = '[S]earch by [G]rep' })
 vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { desc = '[S]earch [D]iagnostics' })
-vim.keymap.set('n', '<C-p>', require('telescope.builtin').git_files, { desc = 'Search Git Files' })
 
 -- [[ Configure Treesitter ]]
 -- See `:help nvim-treesitter`
@@ -141,6 +137,12 @@ require('nvim-treesitter.configs').setup {
   highlight = { enable = true },
   indent = { enable = true, disable = { 'python' } },
 }
+
+-- Diagnostic keymaps
+vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = "Go to previous diagnostic message" })
+vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = "Go to next diagnostic message" })
+vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = "Open floating diagnostic message" })
+vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = "Open diagnostics list" })
 
 -- [[ Configure LSP  ]]
 
@@ -209,7 +211,7 @@ vim.diagnostic.config({
   -- severity_sort = true,
 })
 
--- setup autocomplete
+-- setup cmp
 local cmp = require('cmp')
 local luasnip = require('luasnip')
 
@@ -253,6 +255,17 @@ cmp.setup {
     end,
   },
 }
+
+-- [[ Highlight on yank ]]
+-- See `:help vim.highlight.on_yank()`
+local highlight_group = vim.api.nvim_create_augroup('YankHighlight', { clear = true })
+vim.api.nvim_create_autocmd('TextYankPost', {
+  callback = function()
+    vim.highlight.on_yank()
+  end,
+  group = highlight_group,
+  pattern = '*',
+})
 
 require('drewjs.options')
 

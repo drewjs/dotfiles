@@ -36,3 +36,7 @@ vim.keymap.set("n", "<leader>x", "<cmd>!chmod +x %<CR>", { silent = true })
 
 -- tmux session
 vim.keymap.set("n", "<C-f>", "<cmd>silent !tmux neww tmux-sessionizer<CR>")
+
+-- linter
+vim.keymap.set("v", "<leader>.", "<cmd>!eslint_d --stdin --fix-to-stdout<CR>gv", { noremap = true, silent = true })
+vim.keymap.set("n", "<leader>.", "mF<cmd>%!eslint_d --stdin --fix-to-stdout<CR>`F", { noremap = true, silent = true })
