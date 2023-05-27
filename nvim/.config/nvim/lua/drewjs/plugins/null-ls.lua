@@ -25,7 +25,7 @@ function M.config()
     sources = {
       formatting.prettierd.with({
         env = {
-          PRETTIERD_LOCAL_PRETTIER_ONLY = true,
+          PRETTIERD_LOCAL_PRETTIER_ONLY = 1,
         },
       }),
       diagnostics.eslint_d.with {

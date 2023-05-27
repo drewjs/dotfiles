@@ -1,5 +1,14 @@
 local M = {
   "windwp/nvim-autopairs",
+  dependencies = {
+    {
+      "hrsh7th/nvim-cmp",
+      event = {
+        "InsertEnter",
+        "CmdlineEnter",
+      },
+    },
+  },
   event = "InsertEnter",
 }
 
@@ -13,6 +22,10 @@ function M.config()
       java = false,
     },
   }
+
+  local cmp_autopairs = require('nvim-autopairs.completion.cmp')
+  local cmp = require('cmp')
+  cmp.event:on('confirm_done', cmp_autopairs.on_confirm_done())
 end
 
 return M
