@@ -5,9 +5,9 @@ env:
 
 font:
   normal:
-    family: "Hasklug Nerd Font Mono"
+    family: "Hack Nerd Font"
     style: Regular
-  size: 18.0
+  size: 16.0
 
 scrolling:
   history: 10000
