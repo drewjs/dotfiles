@@ -10,7 +10,7 @@ keymap("n", "<leader>pv", vim.cmd.Ex)
 keymap("i", "jj", "<Esc>")
 keymap("i", "jk", "<Esc>")
 keymap("n", "Q", "<nop>")
-keymap("n", "<C-w>", "<cmd>bd<cr>")
+keymap("n", "q", "<nop>")
 
 -- move selection up/down
 keymap("v", "J", ":m '>+1<CR>gv=gv")
@@ -53,7 +53,6 @@ keymap('n', '<leader>q', vim.diagnostic.setloclist, { desc = "Open diagnostics l
 -- telescope
 keymap("n", "<leader>?", "<cmd>Telescope oldfiles<CR>", opts)
 keymap("n", "<leader><space>", "<cmd>Telescope buffers<CR>", opts)
--- keymap("n", "<leader>/", "<cmd>Telescope current_buffer_fuzzy_find<CR>", opts)
 keymap('n', '<leader>/', function()
   require('telescope.builtin').current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
     winblend = 10,
@@ -69,10 +68,7 @@ keymap("n", "<leader>sd", "<cmd>Telescope diagnostics<CR>", opts)
 
 -- lsp
 keymap("n", "<leader>lf", "<cmd>lua vim.lsp.buf.format{ async = true }<cr>", opts)
+keymap('n', '<leader>ld', '<cmd>lua vim.lsp.diagnostic.show_line_diagnostics()<cr>', opts)
 
--- NvimTree
---keymap("n", "<leader>e", ":NvimTreeToggle<CR>", opts)
-
--- Comment
---keymap("n", "<leader>/", "<cmd>lua require('Comment.api').toggle.linewise.current()<CR>", opts)
---keymap("x", "<leader>/", "<esc><cmd>lua require('Comment.api').toggle.linewise(vim.fn.visualmode())<CR>", opts)
+-- explorer
+keymap({ "n", "i" }, "<C-b>", "<Esc><cmd>Lex<cr><cmd>vert resize 30<cr>")

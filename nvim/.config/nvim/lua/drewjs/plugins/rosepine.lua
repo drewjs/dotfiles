@@ -11,7 +11,7 @@ function M.config()
 
   rosepine.setup({
     --- @usage 'auto'|'main'|'moon'|'dawn'
-    variant = 'auto',
+    variant = 'main',
     --- @usage 'main'|'moon'|'dawn'
     dark_variant = 'main',
     bold_vert_split = false,
@@ -48,22 +48,17 @@ function M.config()
       -- headings = 'subtle'
     },
 
-    -- Change specific vim highlight groups
-    -- https://github.com/rose-pine/neovim/wiki/Recipes
     highlight_groups = {
-      ColorColumn = { bg = 'foam', blend = 10 },
-
-      -- Blend colours against the "base" background
-      CursorLine = { bg = 'foam', blend = 10 },
-      StatusLine = { fg = 'iris', bg = 'pine' },
-    }
+      TelescopeBorder = { fg = "highlight_high", bg = "none" },
+      TelescopeNormal = { bg = "none" },
+      TelescopePromptNormal = { bg = "base" },
+      TelescopeResultsNormal = { fg = "subtle", bg = "none" },
+      TelescopeSelection = { fg = "text", bg = "base" },
+      TelescopeSelectionCaret = { fg = "rose", bg = "rose" },
+    },
   })
 
   vim.cmd.colorscheme("rose-pine")
-
-  -- vim.api.nvim_set_hl(0, 'Normal', { bg = 'none' })
-  -- vim.api.nvim_set_hl(0, 'NormalFloat', { bg = 'none' })
-  -- vim.api.nvim_set_hl(0, 'SignColumn', { bg = 'none' })
 end
 
 return M

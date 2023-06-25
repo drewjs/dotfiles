@@ -1,13 +1,13 @@
 -- status line
 local M = {
   'nvim-lualine/lualine.nvim',
-  event = { "VimEnter", "InsertEnter", "BufReadPre", "BufAdd", "BufNew", "BufReadPost" },
+  event = { "VimEnter", "InsertEnter", "BufReadPre", "BufAdd", "BufNew", "BufReadPost", "ColorScheme" },
   opts = {
     options = {
-      theme = 'onedark',
+      theme = 'rose-pine',
       icons_enabled = false,
-      component_separators = '|',
-      section_separators = '',
+      --component_separators = '|',
+      --section_separators = '',
     },
     sections = {
       lualine_a = { 'mode' },
