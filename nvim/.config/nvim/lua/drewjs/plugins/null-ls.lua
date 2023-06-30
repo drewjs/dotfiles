@@ -6,8 +6,8 @@ local M = {
 function M.config()
   local null_ls = require "null-ls"
   local formatting = null_ls.builtins.formatting
-  local diagnostics = null_ls.builtins.diagnostics
-  local code_actions = null_ls.builtins.code_actions
+  -- local diagnostics = null_ls.builtins.diagnostics
+  -- local code_actions = null_ls.builtins.code_actions
 
   local augroup = vim.api.nvim_create_augroup("LspFormatting", {})
 
@@ -28,20 +28,6 @@ function M.config()
           PRETTIERD_LOCAL_PRETTIER_ONLY = 1,
         },
       }),
-      diagnostics.eslint_d.with {
-        diagnostics_format = '#{m} (#{c})',
-        env = {
-          ESLINT_D_LOCAL_ESLINT_ONLY = 1,
-        },
-        --filter = function(diagnostic)
-        --  return diagnostic.code ~= "prettier/prettier"
-        --end,
-      },
-      code_actions.eslint_d.with {
-        env = {
-          ESLINT_D_LOCAL_ESLINT_ONLY = 1,
-        },
-      },
     },
     on_attach = function(client, bufnr)
       if client.supports_method("textDocument/formatting") then

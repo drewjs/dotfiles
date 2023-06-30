@@ -59,6 +59,16 @@ function M.config()
   })
 
   vim.cmd.colorscheme("rose-pine")
+
+  local function get_color(group, attr)
+    local fn = vim.fn
+    return fn.synIDattr(fn.synIDtrans(fn.hlID(group)), attr)
+  end
+
+  vim.api.nvim_set_hl(0, "GitSignsAdd", { fg = get_color("GitSignsAdd", "fg"), bg = "none" })
+  vim.api.nvim_set_hl(0, "GitSignsChange", { fg = get_color("GitSignsChange", "fg"), bg = "none" })
+  vim.api.nvim_set_hl(0, "GitSignsDelete", { fg = get_color("GitSignsDelete", "fg"), bg = "none" })
+  vim.api.nvim_set_hl(0, "GitSignsChangeDelete", { fg = get_color("GitSignsChangeDelete", "fg"), bg = "none" })
 end
 
 return M
