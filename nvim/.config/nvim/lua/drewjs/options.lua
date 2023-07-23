@@ -29,7 +29,7 @@ vim.opt.incsearch = true
 vim.opt.scrolloff = 8
 
 -- wrap
-vim.opt.wrap = false
+vim.opt.wrap = true
 vim.opt.scrolloff = 8                           -- minimal number of screen lines to keep above and below the cursor
 vim.opt.sidescrolloff = 8                       -- minimal number of screen columns to keep to the left and right of the cursor if wrap is `false`
 
