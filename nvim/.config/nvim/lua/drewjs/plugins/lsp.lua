@@ -21,7 +21,16 @@ local servers = {
       telemetry = { enable = false },
     },
   },
-  tailwindcss = {},
+  tailwindcss = {
+    tailwindCSS = {
+      experimental = {
+        classRegex = {
+          { "cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]" },
+          { "cn\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]" },
+        },
+      },
+    },
+  },
   tsserver = {},
 }
 
