@@ -41,7 +41,7 @@ keymap("n", "<leader>x", "<cmd>!chmod +x %<CR>", { silent = true })
 keymap("n", "<C-f>", "<cmd>silent !tmux neww tmux-sessionizer<CR>")
 
 -- linter
-  keymap("v", "<leader>.", "<cmd>!eslint_d --stdin --fix-to-stdout<CR>gv", { noremap = true, silent = true })
+keymap("v", "<leader>.", "<cmd>!eslint_d --stdin --fix-to-stdout<CR>gv", { noremap = true, silent = true })
 keymap("n", "<leader>.", "mF<cmd>%!eslint_d --stdin --fix-to-stdout<CR>`F", { noremap = true, silent = true })
 
 -- diagnostics
@@ -65,6 +65,9 @@ keymap("n", "<leader>sh", "<cmd>Telescope help_tags<CR>", opts)
 keymap("n", "<leader>sw", "<cmd>Telescope grep_string<CR>", opts)
 keymap("n", "<leader>sg", "<cmd>Telescope live_grep<CR>", opts)
 keymap("n", "<leader>sd", "<cmd>Telescope diagnostics<CR>", opts)
+
+-- copilot
+keymap("n", "<leader>co", "<cmd>Copilot panel<CR>", opts)
 
 -- lsp
 keymap("n", "<leader>lf", "<cmd>lua vim.lsp.buf.format{ async = true }<cr>", opts)

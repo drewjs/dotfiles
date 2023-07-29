@@ -59,14 +59,22 @@ function M.config()
         behavior = cmp.ConfirmBehavior.Replace,
         select = true,
       }),
-      ['<S-Tab>'] = cmp.mapping.select_prev_item(),
       ['<Tab>'] = function(fallback)
         if cmp.visible() then
           cmp.select_next_item()
+        elseif require("copilot.suggestion").is_visible() then
+          require("copilot.suggestion").accept()
         else
           fallback()
         end
-      end
+      end,
+      ["<S-Tab>"] = cmp.mapping(function(fallback)
+        if cmp.visible() then
+          cmp.select_prev_item()
+        else
+          fallback()
+        end
+      end, { "i", "s" }),
     }),
     sources = {
       { name = 'nvim_lsp' },
