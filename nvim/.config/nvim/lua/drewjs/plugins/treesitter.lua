@@ -9,7 +9,7 @@ local M = {
 
 function M.config()
   require('nvim-treesitter.configs').setup {
-    ensure_installed = { 'astro', 'css', 'scss', 'html', 'json', 'markdown', 'go', 'lua', 'python', 'rust', 'javascript', 'tsx', 'typescript', 'vimdoc', 'vim' },
+    ensure_installed = { 'astro', 'css', 'scss', 'html', 'json', 'markdown', 'go', 'lua', 'python', 'rust', 'scala', 'javascript', 'tsx', 'typescript', 'vimdoc', 'vim' },
     auto_install = false,
     highlight = {
       enable = true,

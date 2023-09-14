@@ -2,7 +2,7 @@ local M = {
   "neovim/nvim-lspconfig",
   dependencies = {
     "hrsh7th/cmp-nvim-lsp",
-    {"williamboman/mason.nvim", config = true },
+    { "williamboman/mason.nvim", config = true },
     "williamboman/mason-lspconfig.nvim",
   },
 }
@@ -26,7 +26,7 @@ local servers = {
       experimental = {
         classRegex = {
           { "cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]" },
-          { "cn\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]" },
+          { "cn\\(([^)]*)\\)",  "[\"'`]([^\"'`]*).*?[\"'`]" },
         },
       },
     },
@@ -54,12 +54,15 @@ function M.config()
 
     nmap('gd', vim.lsp.buf.definition, '[G]oto [D]efinition')
     nmap('gr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
-    nmap('gI', vim.lsp.buf.implementation, '[G]oto [I]mplementation')
-    nmap('<leader>D', vim.lsp.buf.type_definition, 'Type [D]efinition')
+    nmap('gi', vim.lsp.buf.implementation, '[G]oto [I]mplementation')
+    nmap('<leader>gt', vim.lsp.buf.type_definition, 'Type [D]efinition')
     nmap('<leader>ds', require('telescope.builtin').lsp_document_symbols, '[D]ocument [S]ymbols')
     nmap('<leader>ws', require('telescope.builtin').lsp_dynamic_workspace_symbols, '[W]orkspace [S]ymbols')
     nmap('K', vim.lsp.buf.hover, 'Hover Documentation')
-    --nmap('<C-k>', vim.lsp.buf.signature_help, 'Signature Documentation')
+    -- nmap('<leader>K', vim.lsp.buf.signature_help, 'Signature Documentation')
+    nmap('<leader>aa', vim.diagnostic.setqflist, '[A]ll Workspace Diagnostics')
+    nmap('<leader>ae', function() vim.diagnostic.setqflist({ severity = "E" }) end, '[A]ll Workspace [E]rrors')
+    nmap('<leader>aw', function() vim.diagnostic.setqflist({ severity = "W" }) end, '[A]ll Workspace [W]arnings')
 
     -- Create a command `:Format` local to the LSP buffer
     vim.api.nvim_buf_create_user_command(bufnr, 'Format', function(_)
