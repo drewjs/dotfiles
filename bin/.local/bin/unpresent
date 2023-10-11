@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+file="$HOME/.config/alacritty/alacritty.yml"
+
+if [ ! -f "$file.bak" ]; then
+    echo "No backup file found."
+    exit 1
+fi
+
+cp "$file.bak" "$file"
+
+rm "$file.bak"

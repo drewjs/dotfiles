@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+file="$HOME/.config/alacritty/alacritty.yml"
+
+cp "$file" "$file.bak"
+
+sed -i '' '/font:/,/size:/s/size: .*/size: 22.0/' "$file"
