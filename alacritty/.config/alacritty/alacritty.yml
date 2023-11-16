@@ -5,7 +5,8 @@ env:
 
 font:
   normal:
-    family: "Hack Nerd Font"
+    # family: "Hack Nerd Font"
+    family: "BerkeleyMono Nerd Font"
     style: Regular
   size: 16.0
 

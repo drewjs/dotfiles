@@ -55,7 +55,7 @@ function M.config()
       ['<C-e>'] = cmp.mapping.abort(),
       ['<C-j>'] = cmp.mapping.select_next_item(),
       ['<C-k>'] = cmp.mapping.select_prev_item(),
-      ['<CR>'] = cmp.mapping.confirm({
+      ['<C-y>'] = cmp.mapping.confirm({
         behavior = cmp.ConfirmBehavior.Replace,
         select = true,
       }),
