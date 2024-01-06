@@ -3,6 +3,7 @@ local M = {
   build = ':TSUpdate',
   dependencies = {
     'windwp/nvim-ts-autotag',
+    'nvim-treesitter/nvim-treesitter-context',
   },
   event = 'BufReadPost',
 }
@@ -20,6 +21,10 @@ function M.config()
     context_commentstring = {
       enable = true,
     },
+  }
+
+  require('treesitter-context').setup {
+    max_lines = 3,
   }
 end
 

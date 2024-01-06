@@ -9,9 +9,9 @@ vim.opt.relativenumber = true
 vim.opt.colorcolumn = "80"
 
 -- indent
-vim.opt.tabstop = 2
-vim.opt.softtabstop = 2
-vim.opt.shiftwidth = 2
+vim.opt.tabstop = 4
+vim.opt.softtabstop = 4
+vim.opt.shiftwidth = 4
 vim.opt.expandtab = true
 vim.opt.smartindent = true
 
@@ -30,14 +30,14 @@ vim.opt.scrolloff = 8
 
 -- wrap
 vim.opt.wrap = true
-vim.opt.scrolloff = 8                           -- minimal number of screen lines to keep above and below the cursor
-vim.opt.sidescrolloff = 8                       -- minimal number of screen columns to keep to the left and right of the cursor if wrap is `false`
+vim.opt.scrolloff = 8     -- minimal number of screen lines to keep above and below the cursor
+vim.opt.sidescrolloff = 8 -- minimal number of screen columns to keep to the left and right of the cursor if wrap is `false`
 
 -- netrw
-vim.g.netrw_banner = 0			                    -- disable that anoying Netrw banner
-vim.g.netrw_browser_split = 4			              -- open in a prior window
+vim.g.netrw_banner = 0        -- disable that anoying Netrw banner
+vim.g.netrw_browser_split = 4 -- open in a prior window
 vim.g.netrw_winsize = 25
-vim.g.netrw_altv = 1				                    -- open splits to the right
+vim.g.netrw_altv = 1          -- open splits to the right
 -- vim.g.netrw_liststyle = 3			                  -- treeview
 
 -- misc
@@ -58,4 +58,3 @@ vim.opt.iskeyword:append "-"                    -- treats words with `-` as sing
 vim.opt.guifont = "monospace:h17"               -- the font used in graphical neovim applications
 vim.opt.laststatus = 0                          -- disables the status line
 vim.opt.formatoptions:remove { "c", "r", "o" }  -- This is a sequence of letters which describes how automatic formatting is to be done
-
