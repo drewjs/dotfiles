@@ -1,0 +1,54 @@
+import = ["/Users/drewjs/.config/alacritty/themes/catppuccin-mocha.toml"]
+live_config_reload = true
+
+[env]
+TERM = "xterm-256color"
+
+[font]
+size = 18.0
+
+[font.normal]
+family = "BerkeleyMono Nerd Font"
+style = "Regular"
+
+[[keyboard.bindings]]
+chars = "\u001Bb"
+key = "Left"
+mods = "Alt"
+
+[[keyboard.bindings]]
+chars = "\u001Bf"
+key = "Right"
+mods = "Alt"
+
+[[keyboard.bindings]]
+chars = "\u001Bb"
+key = "Left"
+mods = "Control"
+
+[[keyboard.bindings]]
+chars = "\u001Bf"
+key = "Right"
+mods = "Control"
+
+[[keyboard.bindings]]
+chars = "\u0015"
+key = "Back"
+mods = "Command"
+
+[[keyboard.bindings]]
+chars = "\u001B\u007F"
+key = "Back"
+mods = "Alt"
+
+[scrolling]
+history = 10000
+multiplier = 3
+
+[window]
+decorations = "buttonless"
+opacity = 0.85
+
+[window.padding]
+x = 4
+y = 4
