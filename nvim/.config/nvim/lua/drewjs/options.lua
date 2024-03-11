@@ -1,3 +1,5 @@
+vim.filetype.add({ extension = { templ = "templ" } })
+
 -- colors
 vim.opt.termguicolors = true
 

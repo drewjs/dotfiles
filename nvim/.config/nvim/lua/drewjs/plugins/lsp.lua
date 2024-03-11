@@ -23,6 +23,9 @@ local servers = {
     },
     tailwindcss = {
         tailwindCSS = {
+            includeLanguages = {
+                templ = "html",
+            },
             experimental = {
                 classRegex = {
                     { "cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]" },
@@ -106,11 +109,19 @@ function M.config()
 
     mason_lspconfig.setup_handlers {
         function(server_name)
-            require('lspconfig')[server_name].setup {
+            local conf = {
                 capabilities = capabilities,
                 on_attach = on_attach,
                 settings = servers[server_name],
             }
+
+            if server_name == 'tailwindcss' then
+                conf.filetypes = { "templ", "javascript", "javascriptreact", "javascript.jsx", "typescript",
+                    "typescriptreact", "typescript.tsx", "vue", "svelte", "astro" }
+                conf.init_options = { userLanguages = { templ = "html" } }
+            end
+
+            require('lspconfig')[server_name].setup(conf)
         end,
     }
 
