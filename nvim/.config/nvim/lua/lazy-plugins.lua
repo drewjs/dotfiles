@@ -7,9 +7,13 @@ require('lazy').setup({
 
   require 'drewjs/plugins/cmp',
 
+  require 'drewjs/plugins/conform',
+
   require 'drewjs/plugins/gitsigns',
 
   require 'drewjs/plugins/harpoon',
+
+  require 'drewjs/plugins/lint',
 
   require 'drewjs/plugins/rose-pine',
 
