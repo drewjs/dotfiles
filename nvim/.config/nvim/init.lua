@@ -1,4 +1,4 @@
-require('drewjs.options')
-require('drewjs.keymaps')
-require('drewjs.Lazy')
-require('drewjs.autocmd')
+require 'options'
+require 'keymaps'
+require 'lazy-bootstrap'
+require 'lazy-plugins'

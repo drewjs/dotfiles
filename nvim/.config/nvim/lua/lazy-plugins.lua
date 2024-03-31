@@ -1,0 +1,9 @@
+require('lazy').setup({
+  -- detect tabstop and shiftwidth automatically
+  'tpope/vim-sleuth',
+
+  -- "gc" to comment visual regions/lines
+  { 'numToStr/Comment.nvim', opts = {} },
+
+  require 'drewjs/plugins/rose-pine',
+})
