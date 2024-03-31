@@ -1,6 +1,17 @@
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 
+-- remap space as leader key
+vim.keymap.set("", "<Space>", "<Nop>")
+vim.g.mapleader = " "
+
+-- convenience
+vim.keymap.set("n", "<leader>pv", vim.cmd.Ex)
+vim.keymap.set("i", "jj", "<Esc>")
+vim.keymap.set("i", "jk", "<Esc>")
+vim.keymap.set("n", "Q", "<nop>")
+vim.keymap.set("n", "q", "<nop>")
+
 -- Set highlight on search, but clear on pressing <Esc> in normal mode
 vim.opt.hlsearch = true
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')

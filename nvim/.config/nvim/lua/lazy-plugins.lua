@@ -7,5 +7,7 @@ require('lazy').setup({
 
   require 'drewjs/plugins/rose-pine',
 
+  require 'drewjs/plugins/telescope',
+
   require 'drewjs/plugins/treesitter',
 })
