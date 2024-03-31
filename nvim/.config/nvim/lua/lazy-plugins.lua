@@ -5,6 +5,8 @@ require('lazy').setup({
   -- "gc" to comment visual regions/lines
   'numToStr/Comment.nvim',
 
+  require 'drewjs/plugins/cmp',
+
   require 'drewjs/plugins/gitsigns',
 
   require 'drewjs/plugins/harpoon',
