@@ -6,4 +6,6 @@ require('lazy').setup({
   { 'numToStr/Comment.nvim', opts = {} },
 
   require 'drewjs/plugins/rose-pine',
+
+  require 'drewjs/plugins/treesitter',
 })
