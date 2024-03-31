@@ -1,8 +1,8 @@
 require('lazy').setup({
-  -- detect tabstop and shiftwidth automatically
   'tpope/vim-sleuth',
 
-  -- "gc" to comment visual regions/lines
+  'tpope/vim-fugitive',
+
   { 'numToStr/Comment.nvim', opts = {} },
 
   require 'drewjs/plugins/cmp',
@@ -16,6 +16,8 @@ require('lazy').setup({
   require 'drewjs/plugins/lint',
 
   require 'drewjs/plugins/lspconfig',
+
+  require 'drewjs/plugins/lualine',
 
   require 'drewjs/plugins/rose-pine',
 
