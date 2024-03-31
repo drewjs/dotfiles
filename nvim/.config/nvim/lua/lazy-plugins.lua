@@ -3,7 +3,9 @@ require('lazy').setup({
   'tpope/vim-sleuth',
 
   -- "gc" to comment visual regions/lines
-  { 'numToStr/Comment.nvim', opts = {} },
+  'numToStr/Comment.nvim',
+
+  require 'drewjs/plugins/gitsigns',
 
   require 'drewjs/plugins/rose-pine',
 
