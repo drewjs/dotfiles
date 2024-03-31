@@ -7,6 +7,8 @@ require('lazy').setup({
 
   require 'drewjs/plugins/gitsigns',
 
+  require 'drewjs/plugins/harpoon',
+
   require 'drewjs/plugins/rose-pine',
 
   require 'drewjs/plugins/telescope',
