@@ -3,6 +3,9 @@
 -- NOTE: You can change these options as you wish!
 --  For more options, you can see `:help option-list`
 
+-- add filetypes
+vim.filetype.add({ extension = { templ = "templ" } })
+
 -- colors
 -- vim.opt.termguicolors = true
 
