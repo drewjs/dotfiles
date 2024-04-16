@@ -31,7 +31,6 @@ return {
 				}
 			end,
 			formatters_by_ft = {
-				css = { { "prettierd", "prettier" } },
 				html = { { "prettierd", "prettier" } },
 				javascript = { { "prettierd", "prettier" } },
 				javascriptreact = { { "prettierd", "prettier" } },
@@ -39,8 +38,8 @@ return {
 				jsonc = { { "prettierd", "prettier" } },
 				lua = { "stylua" },
 				markdown = { { "prettierd", "prettier" } },
-				typescript = { { "prettierd", "prettier" } },
-				typescriptreact = { { "prettierd", "prettier" } },
+				typescript = { { "biome", "prettierd", "prettier" } },
+				typescriptreact = { { "biome", "prettierd", "prettier" } },
 			},
 			formatters = {
 				prettierd = {
