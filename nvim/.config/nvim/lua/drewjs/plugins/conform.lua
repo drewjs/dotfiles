@@ -49,6 +49,23 @@ return {
 					typescript = js_format,
 					typescriptreact = js_format,
 				},
+				formatters = {
+					biome = {
+						condition = function(self, ctx)
+							return vim.fs.find({ "biome.json" }, { path = ctx.filename, upward = true })[1]
+						end,
+					},
+					prettier = {
+						condition = function(self, ctx)
+							return not vim.fs.find({ "biome.json" }, { path = ctx.filename, upward = true })[1]
+						end,
+					},
+					prettierd = {
+						condition = function(self, ctx)
+							return not vim.fs.find({ "biome.json" }, { path = ctx.filename, upward = true })[1]
+						end,
+					},
+				},
 			})
 
 			vim.api.nvim_create_user_command("FormatDisable", function(args)
