@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+# Execute npx with the default Node.js version, passing all arguments
+fnm exec --using=default npx "$@"
