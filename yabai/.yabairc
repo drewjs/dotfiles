@@ -49,6 +49,8 @@ yabai -m rule --add app="Raycast" manage=off
 yabai -m rule --add app="^Music$" manage=off
 yabai -m rule --add app="^Calculator$" manage=off
 yabai -m rule --add app="^Microsoft Teams$" manage=off
+yabai -m rule --add app="Screen Studio" manage=off
+yabai -m rule --add app="Screen Studio Beta" manage=off
 yabai -m rule --add app="CleanShot" manage=off
 
 echo "yabai configuration loaded.."
