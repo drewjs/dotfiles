@@ -6,7 +6,7 @@
 # ── Font ──────────────────────────────────────────────
 font-family = BerkeleyMono Nerd Font
 font-size = 18
-font-thicken = true
+font-thicken = false
 adjust-cell-height = 2
 
 # ── Theme ─────────────────────────────────────────────
