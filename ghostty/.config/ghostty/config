@@ -1,0 +1,55 @@
+# ╔══════════════════════════════════════════════════════╗
+# ║  Ghostty — Andrew's Config                          ║
+# ║  Managed via ~/dotfiles (GNU Stow)                  ║
+# ╚══════════════════════════════════════════════════════╝
+
+# ── Font ──────────────────────────────────────────────
+font-family = BerkeleyMono Nerd Font
+font-size = 18
+font-thicken = true
+adjust-cell-height = 2
+
+# ── Theme ─────────────────────────────────────────────
+theme = Catppuccin Mocha
+alpha-blending = linear-corrected
+window-colorspace = display-p3
+
+# ── Window ────────────────────────────────────────────
+background-opacity = 0.85
+background-blur = true
+macos-titlebar-style = tabs
+macos-option-as-alt = true
+window-padding-x = 8
+window-padding-y = 4
+window-padding-balance = true
+window-save-state = always
+window-inherit-working-directory = true
+confirm-close-surface = false
+
+# ── Cursor ────────────────────────────────────────────
+cursor-style = block
+mouse-hide-while-typing = true
+
+# ── Clipboard ─────────────────────────────────────────
+copy-on-select = true
+clipboard-read = allow
+clipboard-write = allow
+
+# ── Shell Integration ─────────────────────────────────
+shell-integration = detect
+shell-integration-features = sudo,ssh-terminfo,ssh-env
+
+# ── Splits ────────────────────────────────────────────
+unfocused-split-opacity = 0.85
+
+# ── Keybinds ──────────────────────────────────────────
+# Word jump (Option+Arrow)
+keybind = alt+left=text:\x1bb
+keybind = alt+right=text:\x1bf
+
+# Delete word (Option+Backspace) / delete line (Cmd+Backspace)
+keybind = alt+backspace=text:\x1b\x7f
+keybind = super+backspace=text:\x15
+
+# Shift+Enter sends literal newline (useful for Claude Code / multi-line input)
+keybind = shift+enter=text:\n
