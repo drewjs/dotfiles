@@ -54,3 +54,8 @@ y = 4
 [general]
 live_config_reload = true
 import = ["/Users/drewjs/.config/alacritty/themes/catppuccin-mocha.toml"]
+
+[[keyboard.bindings]]
+key = "Return"
+mods = "Shift"
+chars = "\u001b\r"
