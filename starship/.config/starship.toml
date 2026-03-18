@@ -9,7 +9,7 @@ truncate_to_repo = false
 
 [git_branch]
 symbol = " "
-truncation_length = 18
+truncation_length = 32
 
 [golang]
 symbol = " "
