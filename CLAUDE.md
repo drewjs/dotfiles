@@ -9,7 +9,7 @@ macOS dotfiles managed with [GNU Stow](https://www.gnu.org/software/stow/). Each
 Each directory mirrors the target path relative to `$HOME`:
 
 - **XDG configs** nest under `.config/`: `nvim/.config/nvim/`, `tmux/.config/tmux/`, `alacritty/.config/alacritty/`
-- **Home-root configs** place dotfiles directly: `skhd/.skhdrc`, `yabai/.yabairc`, `zsh/.zshrc`
+- **Home-root configs** place dotfiles directly: `skhd/.skhdrc`, `yabai/.yabairc`
 - **Scripts** go in `bin/.local/bin/`
 
 ## Setup
@@ -22,7 +22,7 @@ brew install stow
 git clone <repo> ~/dotfiles && cd ~/dotfiles
 
 # Stow all packages
-stow alacritty bin nvim skhd tmux yabai zsh
+stow bin ghostty nvim skhd starship tmux yabai
 
 # Or stow a single package
 stow nvim
@@ -57,10 +57,10 @@ Plugin configs live in `nvim/.config/nvim/lua/drewjs/plugins/`.
 
 ## Key Tools
 
-- **alacritty** — terminal emulator (Catppuccin Mocha theme, BerkeleyMono font)
+- **ghostty** — terminal emulator (Catppuccin Macchiato theme, BerkeleyMono font)
 - **nvim** — editor with lazy.nvim, LSP, Telescope, Treesitter, Harpoon
-- **tmux** — terminal multiplexer with custom statusline
+- **tmux** — terminal multiplexer with Catppuccin Macchiato statusline (catppuccin/tmux plugin)
+- **starship** — shell prompt
 - **skhd** — macOS hotkey daemon
 - **yabai** — macOS tiling window manager
-- **zsh** — shell config with Oh-My-Zsh, fzf, ripgrep
 - **bin** — custom scripts (`tmux-sessionizer`, `present`/`unpresent`, etc.)
