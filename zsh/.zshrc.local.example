@@ -1,0 +1,14 @@
+# Copy to ~/.zshrc.local and fill in values
+# DO NOT commit ~/.zshrc.local
+
+export AZURE_NPM_TOKEN_BASE64=""
+export AZURE_DEVOPS_PAT=""
+export AZURE_DEVOPS_EXT_PAT="$AZURE_DEVOPS_PAT"
+export AZURE_DEVOPS_ORG="bitcoinira"
+export AZURE_DEVOPS_URL="https://dev.azure.com/bitcoinira"
+export CLOUDFLARE_API_TOKEN=""
+export CLOUDFLARE_ZONE_ID=""
+export NOTION_API_KEY=""
+export ELEVENLABS_API_KEY=""
+export XAI_API_KEY=""
+export CLAUDE_CODE_OAUTH_TOKEN=""
