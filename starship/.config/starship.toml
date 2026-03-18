@@ -1,0 +1,27 @@
+format = "$directory$all"
+
+[character]
+error_symbol = "[❯](bold red)"
+success_symbol = "[❯](bold green)"
+
+[directory]
+truncate_to_repo = false
+
+[git_branch]
+symbol = " "
+truncation_length = 18
+
+[golang]
+symbol = " "
+
+[lua]
+symbol = " "
+
+[nodejs]
+symbol = " "
+
+[package]
+disabled = true
+
+[buf]
+disabled = true
