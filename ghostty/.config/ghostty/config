@@ -10,12 +10,12 @@ font-thicken = false
 adjust-cell-height = 2
 
 # ── Theme ─────────────────────────────────────────────
-theme = Catppuccin Mocha
+theme = Catppuccin Macchiato
 alpha-blending = linear-corrected
 window-colorspace = display-p3
 
 # ── Window ────────────────────────────────────────────
-background-opacity = 0.85
+background-opacity = 1
 background-blur = true
 macos-titlebar-style = tabs
 macos-option-as-alt = true
