@@ -7,7 +7,7 @@ return {
 			{
 				"<leader>f",
 				function()
-					require("conform").format({ async = true, lsp_fallback = true })
+					require("conform").format({ async = true, lsp_format = "fallback" })
 				end,
 				mode = "",
 				desc = "[F]ormat buffer",
@@ -15,6 +15,10 @@ return {
 		},
 		config = function()
 			local conform = require("conform")
+
+			local not_biome = function(_, ctx)
+				return not vim.fs.find({ "biome.json" }, { path = ctx.filename, upward = true })[1]
+			end
 
 			local js_format = {
 				{ "prettierd", "prettier" },
@@ -24,8 +28,6 @@ return {
 			conform.setup({
 				format_on_save = function(bufnr)
 					local disable_filetypes = {
-						c = true,
-						cpp = true,
 						javascript = true,
 						javascriptreact = true,
 						typescript = true,
@@ -39,7 +41,7 @@ return {
 
 					return {
 						timeout_ms = 1000,
-						lsp_fallback = not disable_filetypes[vim.bo[bufnr].filetype],
+						lsp_format = not disable_filetypes[vim.bo[bufnr].filetype] and "fallback" or "never",
 					}
 				end,
 				formatters_by_ft = {
@@ -56,14 +58,10 @@ return {
 						end,
 					},
 					prettier = {
-						condition = function(self, ctx)
-							return not vim.fs.find({ "biome.json" }, { path = ctx.filename, upward = true })[1]
-						end,
+						condition = not_biome,
 					},
 					prettierd = {
-						condition = function(self, ctx)
-							return not vim.fs.find({ "biome.json" }, { path = ctx.filename, upward = true })[1]
-						end,
+						condition = not_biome,
 					},
 				},
 			})
@@ -89,4 +87,3 @@ return {
 		end,
 	},
 }
--- vim: ts=2 sts=2 sw=2 et
