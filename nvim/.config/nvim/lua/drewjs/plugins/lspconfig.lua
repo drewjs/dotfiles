@@ -40,8 +40,81 @@ return {
 				capabilities = require("blink.cmp").get_lsp_capabilities(),
 			})
 
+			-- Bounded replacement for nvim-lspconfig's find_tailwind_global_css().
+			--
+			-- Upstream (lsp/tailwindcss.lua) resolves Tailwind v4's global stylesheet by calling
+			-- vim.fs.find() from the *git root* with no ignore list and limit=math.huge, then
+			-- readblob()ing every .css/.scss/.pcss it finds. In ~/work/selfserve that is 5,678
+			-- files across 46GB -- including 37GB of .claude/worktrees, which vim.fs.find sees
+			-- because it does not respect .gitignore. It runs synchronously on the main loop in
+			-- before_init, before the server starts, for every buffer tailwindcss claims (its
+			-- filetype list includes markdown). Result: an unkillable multi-minute freeze.
+			--
+			-- Same intent, bounded: search only under the resolved LSP root, cap the depth, and
+			-- skip the directories that make the walk expensive.
+			local function find_tailwind_css(root)
+				if not root then
+					return nil
+				end
+				local skip = {
+					node_modules = true,
+					[".git"] = true,
+					[".claude"] = true,
+					[".turbo"] = true,
+					dist = true,
+					[".next"] = true,
+					ios = true,
+					android = true,
+					vendor = true,
+				}
+				local found = vim.fs.find(function(name, path)
+					if not name:match("%.css$") then
+						return false
+					end
+					for part in path:gmatch("[^/]+") do
+						if skip[part] then
+							return false
+						end
+					end
+					return true
+				end, { path = root, type = "file", limit = 50 })
+				for _, p in ipairs(found) do
+					local ok, content = pcall(vim.fn.readblob, p)
+					if ok and tostring(content):find("tailwindcss", 1, true) then
+						return p
+					end
+				end
+				return nil
+			end
+
 			-- Per-server configs
 			vim.lsp.config("tailwindcss", {
+				-- Replaces lspconfig's before_init so its unbounded scan never runs. Keep the
+				-- tabSize behaviour it provided.
+				before_init = function(params, config)
+					config.settings = config.settings or {}
+					config.settings.editor = config.settings.editor or {}
+					config.settings.editor.tabSize = vim.lsp.util.get_effective_tabstop()
+					config.settings.tailwindCSS = config.settings.tailwindCSS or {}
+					config.settings.tailwindCSS.experimental = config.settings.tailwindCSS.experimental or {}
+					local exp = config.settings.tailwindCSS.experimental
+					if exp.configFile == nil then
+						exp.configFile = find_tailwind_css(config.root_dir or params.rootPath)
+					end
+				end,
+				-- Upstream claims 60+ filetypes, including markdown and mdx. Every one of them
+				-- triggers before_init below, so trim to what we actually write Tailwind in.
+				filetypes = {
+					"html",
+					"css",
+					"scss",
+					"javascript",
+					"javascriptreact",
+					"typescriptreact",
+					"templ",
+					"svelte",
+					"vue",
+				},
 				settings = {
 					tailwindCSS = {
 						includeLanguages = {
