@@ -23,11 +23,7 @@ return {
 					map("gI", require("telescope.builtin").lsp_implementations, "[G]oto [I]mplementation")
 					map("<leader>D", require("telescope.builtin").lsp_type_definitions, "Type [D]efinition")
 					map("<leader>ds", require("telescope.builtin").lsp_document_symbols, "[D]ocument [S]ymbols")
-					map(
-						"<leader>ws",
-						require("telescope.builtin").lsp_dynamic_workspace_symbols,
-						"[W]orkspace [S]ymbols"
-					)
+					map("<leader>ws", require("telescope.builtin").lsp_dynamic_workspace_symbols, "[W]orkspace [S]ymbols")
 					map("<leader>rn", vim.lsp.buf.rename, "[R]e[n]ame")
 					map("<leader>ca", vim.lsp.buf.code_action, "[C]ode [A]ction")
 					map("K", vim.lsp.buf.hover, "Hover Documentation")
@@ -50,38 +46,48 @@ return {
 			-- before_init, before the server starts, for every buffer tailwindcss claims (its
 			-- filetype list includes markdown). Result: an unkillable multi-minute freeze.
 			--
-			-- Same intent, bounded: search only under the resolved LSP root, cap the depth, and
-			-- skip the directories that make the walk expensive.
+			-- Same intent, genuinely bounded.
+			--
+			-- NOTE: this deliberately uses vim.fs.dir, not vim.fs.find. vim.fs.find's predicate
+			-- only filters *results* -- it does not prune *traversal*, so it still descends into
+			-- every directory. A first attempt at this fix used vim.fs.find with a skip-list
+			-- predicate and still hung on apps/mobile, which has 5.2GB of ios/ and 890MB of
+			-- android/ inside the package: the walk never found its result limit, so it read the
+			-- entire subtree anyway. vim.fs.dir's `skip` returns false to prune a directory before
+			-- descending, which is what we actually need.
+			local prune = {
+				node_modules = true,
+				[".git"] = true,
+				[".claude"] = true,
+				[".turbo"] = true,
+				[".next"] = true,
+				[".expo"] = true,
+				dist = true,
+				build = true,
+				coverage = true,
+				ios = true,
+				android = true,
+				vendor = true,
+			}
+
 			local function find_tailwind_css(root)
 				if not root then
 					return nil
 				end
-				local skip = {
-					node_modules = true,
-					[".git"] = true,
-					[".claude"] = true,
-					[".turbo"] = true,
-					dist = true,
-					[".next"] = true,
-					ios = true,
-					android = true,
-					vendor = true,
-				}
-				local found = vim.fs.find(function(name, path)
-					if not name:match("%.css$") then
-						return false
-					end
-					for part in path:gmatch("[^/]+") do
-						if skip[part] then
-							return false
+				for name, type_ in
+					vim.fs.dir(root, {
+						depth = 5,
+						skip = function(dirname)
+							return not prune[dirname]
+						end,
+					})
+				do
+					if type_ == "file" and name:match("%.css$") then
+						local path = vim.fs.joinpath(root, name)
+						local ok, content = pcall(vim.fn.readblob, path)
+						if ok and tostring(content):find("tailwindcss", 1, true) then
+							return path
 						end
-					end
-					return true
-				end, { path = root, type = "file", limit = 50 })
-				for _, p in ipairs(found) do
-					local ok, content = pcall(vim.fn.readblob, p)
-					if ok and tostring(content):find("tailwindcss", 1, true) then
-						return p
 					end
 				end
 				return nil
