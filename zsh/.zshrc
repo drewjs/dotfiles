@@ -7,6 +7,18 @@ export GIT_EDITOR="nvim"
 export DISABLE_AUTO_TITLE="true"
 export PRETTIERD_LOCAL_PRETTIER_ONLY="1"
 
+# ── History ──────────────────────────────────────────
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=100000
+SAVEHIST=100000
+setopt EXTENDED_HISTORY       # timestamps in history
+setopt HIST_EXPIRE_DUPS_FIRST # expire dupes before unique
+setopt HIST_IGNORE_DUPS       # don't record consecutive dupes
+setopt HIST_IGNORE_SPACE      # skip commands starting with space
+setopt HIST_VERIFY            # show expanded command before running
+setopt SHARE_HISTORY          # share history across sessions
+setopt APPEND_HISTORY         # append rather than overwrite
+
 # ── PATH ──────────────────────────────────────────────
 export PATH="$HOME/.local/bin:$PATH"
 export GOPATH="$HOME/go"
@@ -47,6 +59,7 @@ alias cld="claude --dangerously-skip-permissions"
 alias g="git"
 
 # ── Keybindings ───────────────────────────────────────
+bindkey -e
 bindkey -s ^f "tmux-sessionizer\n"
 
 # ── Starship ──────────────────────────────────────────
@@ -57,4 +70,8 @@ eval "$(starship init zsh)"
 
 # ── Completions ───────────────────────────────────────
 autoload -Uz compinit && compinit
-[[ -f "$HOME/.openclaw/completions/openclaw.zsh" ]] && source "$HOME/.openclaw/completions/openclaw.zsh"
+# [[ -f "$HOME/.openclaw/completions/openclaw.zsh" ]] && source "$HOME/.openclaw/completions/openclaw.zsh"
+
+# OpenClaw Completion
+# source "/Users/drewjs/.openclaw/completions/openclaw.zsh"
+unset CLAUDE_CODE_OAUTH_TOKEN
