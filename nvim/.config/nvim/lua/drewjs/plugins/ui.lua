@@ -1,53 +1,52 @@
 return {
-	-- File type icons
-	{ "nvim-tree/nvim-web-devicons", lazy = true },
+  -- File type icons
+  { "nvim-tree/nvim-web-devicons", lazy = true },
 
-	-- Inline color highlighting
-	{
-		"brenoprata10/nvim-highlight-colors",
-		event = { "BufReadPre", "BufNewFile" },
-		opts = {},
-	},
+  -- Inline color highlighting
+  {
+    "brenoprata10/nvim-highlight-colors",
+    event = { "BufReadPre", "BufNewFile" },
+    opts = {},
+  },
 
-	-- Todo comment highlighting
-	{
-		"folke/todo-comments.nvim",
-		event = { "BufReadPre", "BufNewFile" },
-		dependencies = { "nvim-lua/plenary.nvim" },
-		opts = { signs = false },
-	},
+  -- Todo comment highlighting
+  {
+    "folke/todo-comments.nvim",
+    event = { "BufReadPre", "BufNewFile" },
+    dependencies = { "nvim-lua/plenary.nvim" },
+    opts = { signs = false },
+  },
 
-	-- Styled markdown rendering in-buffer
-	{
-		"MeanderingProgrammer/render-markdown.nvim",
-		enabled = false, -- PERF: nvim 0.12 treesitter crash on markdown_inline injection parsing
-		ft = "markdown",
-		dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" },
-		opts = {},
-	},
+  -- Styled markdown rendering in-buffer
+  {
+    "MeanderingProgrammer/render-markdown.nvim",
+    ft = "markdown",
+    dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" },
+    opts = {},
+  },
 
-	-- Mask secrets in .env files
-	{
-		"laytan/cloak.nvim",
-		ft = { "sh", "env", "dotenv" },
-		opts = {},
-	},
+  -- Mask secrets in .env files
+  {
+    "laytan/cloak.nvim",
+    ft = { "sh", "env", "dotenv" },
+    opts = {},
+  },
 
-	-- Better code folding
-	{
-		"kevinhwang91/nvim-ufo",
-		event = { "BufReadPre", "BufNewFile" },
-		dependencies = { "kevinhwang91/promise-async" },
-		opts = {
-			provider_selector = function()
-				return { "treesitter", "indent" }
-			end,
-		},
-		init = function()
-			vim.opt.foldcolumn = "1"
-			vim.opt.foldlevel = 99
-			vim.opt.foldlevelstart = 99
-			vim.opt.foldenable = true
-		end,
-	},
+  -- Better code folding
+  {
+    "kevinhwang91/nvim-ufo",
+    event = { "BufReadPre", "BufNewFile" },
+    dependencies = { "kevinhwang91/promise-async" },
+    opts = {
+      provider_selector = function()
+        return { "treesitter", "indent" }
+      end,
+    },
+    init = function()
+      vim.opt.foldcolumn = "1"
+      vim.opt.foldlevel = 99
+      vim.opt.foldlevelstart = 99
+      vim.opt.foldenable = true
+    end,
+  },
 }
