@@ -7,11 +7,11 @@ return {
 		opts = {
 			bigfile = { enabled = true },
 			notifier = { enabled = true, timeout = 3000 },
-			quickfile = { enabled = true },
+			quickfile = { enabled = false }, -- PERF: crashes treesitter on nvim 0.12 with markdown_inline injection
 			statuscolumn = { enabled = true },
 			words = { enabled = true },
 			dim = { enabled = true },
-			indent = { enabled = true },
+			indent = { enabled = false }, -- PERF: scope computation crashes treesitter on nvim 0.12 with injected langs
 			scratch = { enabled = true },
 			gitbrowse = { enabled = true },
 			toggle = { enabled = true },

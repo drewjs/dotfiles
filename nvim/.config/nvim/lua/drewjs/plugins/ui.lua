@@ -20,6 +20,7 @@ return {
 	-- Styled markdown rendering in-buffer
 	{
 		"MeanderingProgrammer/render-markdown.nvim",
+		enabled = false, -- PERF: nvim 0.12 treesitter crash on markdown_inline injection parsing
 		ft = "markdown",
 		dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" },
 		opts = {},

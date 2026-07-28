@@ -31,6 +31,7 @@ return {
 			highlight = {
 				enable = true,
 				additional_vim_regex_highlighting = false,
+				disable = { "markdown" }, -- nvim 0.12: markdown_inline injection parsing crash
 			},
 			indent = { enable = true },
 		},
@@ -41,6 +42,7 @@ return {
 	},
 	{
 		"nvim-treesitter/nvim-treesitter-context",
+		enabled = false, -- PERF: crashes treesitter on nvim 0.12 with injected langs (markdown, tsx)
 		event = "BufReadPost",
 		opts = {
 			max_lines = 3,
