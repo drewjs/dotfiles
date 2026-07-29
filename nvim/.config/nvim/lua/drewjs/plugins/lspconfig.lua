@@ -23,7 +23,11 @@ return {
 					map("gI", require("telescope.builtin").lsp_implementations, "[G]oto [I]mplementation")
 					map("<leader>D", require("telescope.builtin").lsp_type_definitions, "Type [D]efinition")
 					map("<leader>ds", require("telescope.builtin").lsp_document_symbols, "[D]ocument [S]ymbols")
-					map("<leader>ws", require("telescope.builtin").lsp_dynamic_workspace_symbols, "[W]orkspace [S]ymbols")
+					map(
+						"<leader>ws",
+						require("telescope.builtin").lsp_dynamic_workspace_symbols,
+						"[W]orkspace [S]ymbols"
+					)
 					map("<leader>rn", vim.lsp.buf.rename, "[R]e[n]ame")
 					map("<leader>ca", vim.lsp.buf.code_action, "[C]ode [A]ction")
 					map("K", vim.lsp.buf.hover, "Hover Documentation")
@@ -231,8 +235,37 @@ return {
 				on_dir(root)
 			end
 
+			-- Resolve the workspace's own TypeScript, searching UPWARD from the LSP root.
+			--
+			-- `vtsls.autoUseWorkspaceTsdk` alone is not enough once root_dir is a package rather
+			-- than the workspace root: it resolves typescript.tsdk relative to the workspace folder,
+			-- and pnpm with nodeLinker=hoisted puts typescript only at the workspace root. Verified
+			-- in selfserve: apps/web/node_modules/typescript does not exist, so vtsls silently fell
+			-- back to its own bundled TypeScript -- a second copy of TS in memory, and a version
+			-- that can drift from what `pnpm typecheck` and CI use.
+			local function find_workspace_tsdk(root)
+				if not root then
+					return nil
+				end
+				for dir in vim.fs.parents(vim.fs.joinpath(root, "x")) do
+					local lib = vim.fs.joinpath(dir, "node_modules", "typescript", "lib")
+					if vim.uv.fs_stat(vim.fs.joinpath(lib, "tsserver.js")) then
+						return lib
+					end
+				end
+				return nil
+			end
+
 			vim.lsp.config("vtsls", {
 				root_dir = ts_root_dir,
+				before_init = function(_, config)
+					local tsdk = find_workspace_tsdk(config.root_dir)
+					if tsdk then
+						config.settings = config.settings or {}
+						config.settings.typescript = config.settings.typescript or {}
+						config.settings.typescript.tsdk = tsdk
+					end
+				end,
 				on_attach = function(_, bufnr)
 					-- vtsls exposes fix_all / add_missing_imports / remove_unused / organize_imports
 					-- as `source.*` code actions, and nvim only surfaces those when asked for by
