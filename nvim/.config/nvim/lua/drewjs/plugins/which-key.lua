@@ -6,6 +6,7 @@ return {
 			spec = {
 				{ "<leader>s", group = "[S]earch" },
 				{ "<leader>g", group = "[G]it" },
+				{ "<leader>h", group = "[H]unk (gitsigns)" },
 				{ "<leader>u", group = "[U]I toggles" },
 				{ "<leader>d", group = "[D]ocument / LSP" },
 				{ "<leader>y", group = "[Y]ank clipboard" },

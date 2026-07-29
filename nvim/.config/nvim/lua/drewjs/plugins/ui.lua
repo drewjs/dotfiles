@@ -25,13 +25,6 @@ return {
 		opts = {},
 	},
 
-	-- Mask secrets in .env files
-	{
-		"laytan/cloak.nvim",
-		ft = { "sh", "env", "dotenv" },
-		opts = {},
-	},
-
 	-- Better code folding
 	{
 		"kevinhwang91/nvim-ufo",
