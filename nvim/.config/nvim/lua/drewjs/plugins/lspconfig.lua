@@ -33,7 +33,31 @@ return {
 
 			-- Global LSP config: capabilities for all servers
 			vim.lsp.config("*", {
-				capabilities = require("blink.cmp").get_lsp_capabilities(),
+				capabilities = require("blink.cmp").get_lsp_capabilities({
+					workspace = {
+						-- PERF: nvim's macOS didChangeWatchedFiles backend is a single recursive
+						-- FSEvents handle at the workspace root (vim/lsp/_watchfiles.lua ->
+						-- vim/_watch.lua M.watch with uvflags.recursive). Registering it is O(1),
+						-- but every filtering decision happens *inside* the Lua callback on the
+						-- main loop -- so in ~/work/selfserve every one of ~2.8M files' changes
+						-- crosses into it. The shipped exclude list covers node_modules but not
+						-- .turbo/dist/.next/.git/index, i.e. exactly a turbo monorepo's churn.
+						--
+						-- Must be an explicit `false`: vim/lsp/client.lua deep-merges these on top
+						-- of make_client_capabilities(), so you cannot remove a capability by
+						-- omission. _watchfiles.M.register early-returns when it is falsy, so no
+						-- watcher is created at all.
+						--
+						-- Cost: servers stop hearing about out-of-editor file changes. tsserver
+						-- watches files itself (no loss); tailwindcss falls back to its own
+						-- debounced, ignore-listed chokidar watcher (a gain); lua_ls/gopls may
+						-- need :LspRestart after an out-of-editor dependency change.
+						didChangeWatchedFiles = {
+							dynamicRegistration = false,
+							relativePatternSupport = false,
+						},
+					},
+				}),
 			})
 
 			-- Bounded replacement for nvim-lspconfig's find_tailwind_global_css().
@@ -95,6 +119,20 @@ return {
 
 			-- Per-server configs
 			vim.lsp.config("tailwindcss", {
+				-- lsp/tailwindcss.lua hard-sets dynamicRegistration = true, and a named config
+				-- beats the "*" config in vim.lsp.config's merge order ("*", rtp, user) -- so the
+				-- global strip above does not reach this server unless repeated here. tailwindcss
+				-- is one of the two servers that actually registers bare `**/…` watchers, so this
+				-- is the case that matters most. Verified: without this it still reported true.
+				-- It falls back to its own debounced, ignore-listed chokidar watcher.
+				capabilities = {
+					workspace = {
+						didChangeWatchedFiles = {
+							dynamicRegistration = false,
+							relativePatternSupport = false,
+						},
+					},
+				},
 				-- Replaces lspconfig's before_init so its unbounded scan never runs. Keep the
 				-- tabSize behaviour it provided.
 				before_init = function(params, config)
