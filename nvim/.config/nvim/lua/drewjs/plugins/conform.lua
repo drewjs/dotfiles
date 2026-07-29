@@ -20,12 +20,19 @@ return {
 				return not vim.fs.find({ "biome.json" }, { path = ctx.filename, upward = true })[1]
 			end
 
-			local js_format = {
-				{ "prettierd", "prettier" },
-				"biome",
-			}
+			-- Run the first formatter whose condition passes: prettierd/prettier outside a Biome
+			-- project, biome inside one (the conditions below are mutually exclusive).
+			--
+			-- NOTE: this used to be `{ { "prettierd", "prettier" }, "biome" }`. conform removed that
+			-- nested-table syntax in favour of `stop_after_first`, and the old form now raises
+			-- "The nested {} syntax to run the first formatter has been replaced by the
+			-- stop_after_first option" from dedupe_formatters -- which made *every* JS/TS format
+			-- call throw, so formatting these filetypes was silently doing nothing.
+			local js_format = { "prettierd", "prettier", "biome" }
 
 			conform.setup({
+				-- Required by the flat js_format list above: stop at the first formatter that runs.
+				stop_after_first = true,
 				format_on_save = function(bufnr)
 					local disable_filetypes = {
 						javascript = true,
