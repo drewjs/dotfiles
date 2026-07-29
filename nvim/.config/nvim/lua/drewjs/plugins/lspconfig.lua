@@ -121,8 +121,43 @@ return {
 				return nil
 			end
 
+			-- Upstream's tailwindcss root_dir searches upward for tailwind.config.*/postcss.config.*
+			-- and falls back to `.git`. Tailwind v4 needs no config file, so in a monorepo where only
+			-- some packages use Tailwind that fallback lands on the repo root -- verified in
+			-- selfserve: opening apps/mobile/src/App.tsx rooted tailwindcss at the 46GB tree and then
+			-- resolved apps/auth's stylesheet for a mobile buffer. apps/mobile does not use Tailwind
+			-- at all (only apps/auth and apps/web declare it).
+			--
+			-- Require positive evidence instead: the nearest ancestor that declares tailwindcss or
+			-- ships a legacy config. No evidence -> do not attach, rather than attach at the root.
+			local function tailwind_root_dir(bufnr, on_dir)
+				local fname = vim.api.nvim_buf_get_name(bufnr)
+				if fname == "" then
+					return
+				end
+				for dir in vim.fs.parents(fname) do
+					for _, ext in ipairs({ "js", "cjs", "mjs", "ts" }) do
+						if vim.uv.fs_stat(vim.fs.joinpath(dir, "tailwind.config." .. ext)) then
+							return on_dir(dir)
+						end
+					end
+					local pkg = vim.fs.joinpath(dir, "package.json")
+					if vim.uv.fs_stat(pkg) then
+						local ok, content = pcall(vim.fn.readblob, pkg)
+						if ok and tostring(content):find('"tailwindcss"', 1, true) then
+							return on_dir(dir)
+						end
+					end
+					-- Stop once we have considered the repo root; never attach above it.
+					if vim.uv.fs_stat(vim.fs.joinpath(dir, ".git")) then
+						return
+					end
+				end
+			end
+
 			-- Per-server configs
 			vim.lsp.config("tailwindcss", {
+				root_dir = tailwind_root_dir,
 				-- lsp/tailwindcss.lua hard-sets dynamicRegistration = true, and a named config
 				-- beats the "*" config in vim.lsp.config's merge order ("*", rtp, user) -- so the
 				-- global strip above does not reach this server unless repeated here. tailwindcss
