@@ -1,7 +1,7 @@
 return {
 	{
 		"nvim-telescope/telescope.nvim",
-		branch = "0.1.x",
+		branch = "master", -- 0.1.x calls nvim-treesitter.parsers.ft_to_lang(), removed on treesitter `main`; master uses upstream vim.treesitter
 		cmd = "Telescope",
 		keys = {
 			{

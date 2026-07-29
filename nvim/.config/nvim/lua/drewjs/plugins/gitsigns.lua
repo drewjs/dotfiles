@@ -55,6 +55,21 @@ return {
 				map("n", "<leader>hD", function()
 					gs.diffthis("~")
 				end, "[h]unk [D]iff against last commit")
+
+				-- diffthis opens a scratch split and puts you in diff mode, which is not obvious to
+				-- get out of (`:diffoff!` plus closing the split). Give it an explicit exit.
+				map("n", "<leader>hq", function()
+					for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+						if vim.wo[win].diff then
+							local buf = vim.api.nvim_win_get_buf(win)
+							-- Close gitsigns' scratch diff windows, keep the real file.
+							if vim.bo[buf].buftype ~= "" or vim.api.nvim_buf_get_name(buf):match("^gitsigns://") then
+								pcall(vim.api.nvim_win_close, win, true)
+							end
+						end
+					end
+					vim.cmd("diffoff!")
+				end, "[h]unk diff [q]uit")
 			end,
 		},
 	},

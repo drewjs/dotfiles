@@ -31,7 +31,33 @@ return {
 		event = { "BufReadPre", "BufNewFile" },
 		dependencies = { "kevinhwang91/promise-async" },
 		opts = {
-			provider_selector = function()
+			-- Returning "" tells ufo not to attach to this buffer at all.
+			--
+			-- ufo otherwise attaches to everything, including scratch floats such as gitsigns'
+			-- hunk preview (buftype=nofile). Its line cache then goes out of bounds against the
+			-- float's shorter contents and its decoration provider throws on redraw:
+			--   nvim-ufo/lua/ufo/model/buffer.lua:228: index out of bounds
+			-- Same class of problem in diff mode, where the line mapping is not the buffer's own.
+			provider_selector = function(_, filetype, buftype)
+				local skip_ft = {
+					[""] = true,
+					help = true,
+					qf = true,
+					oil = true,
+					TelescopePrompt = true,
+					TelescopeResults = true,
+					["gitsigns-blame"] = true,
+					["gitsigns.blame"] = true,
+					snacks_dashboard = true,
+					snacks_notif = true,
+					lazy = true,
+					mason = true,
+					checkhealth = true,
+					diff = true,
+				}
+				if buftype ~= "" or skip_ft[filetype] then
+					return ""
+				end
 				return { "treesitter", "indent" }
 			end,
 		},
