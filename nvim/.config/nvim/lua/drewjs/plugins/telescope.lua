@@ -121,7 +121,37 @@ return {
 			{ "nvim-tree/nvim-web-devicons" },
 		},
 		config = function()
+			-- Search hidden files, but never inside .git.
+			--
+			-- ripgrep skips dot-directories by default, and telescope's defaults are a plain
+			-- `rg --files` / `rg` invocation. In THIS repo every stow package keeps its content
+			-- under a dot-directory (nvim/.config/nvim/..., bin/.local/bin/...), so find_files
+			-- returned literally 2 results -- CLAUDE.md and README.md -- and grep found nothing.
+			--
+			-- Safe in big repos: rg still honours .gitignore and .git/info/exclude, so in
+			-- ~/work/selfserve this goes 4,048 -> 4,161 files in 0.04s with zero results from the
+			-- 37GB of .claude/worktrees.
+			local hidden = { "--hidden", "--glob", "!**/.git/*" }
+
+			local vimgrep_arguments = vim.list_extend({
+				"rg",
+				"--color=never",
+				"--no-heading",
+				"--with-filename",
+				"--line-number",
+				"--column",
+				"--smart-case",
+			}, hidden)
+
 			require("telescope").setup({
+				defaults = {
+					vimgrep_arguments = vimgrep_arguments,
+				},
+				pickers = {
+					find_files = {
+						find_command = vim.list_extend({ "rg", "--files", "--color", "never" }, hidden),
+					},
+				},
 				extensions = {
 					["ui-select"] = {
 						require("telescope.themes").get_dropdown(),
