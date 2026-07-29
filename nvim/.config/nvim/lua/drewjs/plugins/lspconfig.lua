@@ -412,12 +412,18 @@ return {
 				run_on_start = true,
 			})
 
+			-- IMPORTANT: automatic_enable turns on EVERY server installed in Mason, and an enabled
+			-- server's root_dir/before_init runs on buffers you would not expect -- the tailwindcss
+			-- freeze fired on a markdown file. So an unused Mason package is a correctness risk, not
+			-- clutter. Uninstalled deliberately: eslint-lsp (selfserve is biome-only, zero eslint
+			-- configs, yet it attached to every .ts/.tsx buffer), templ (no .templ files),
+			-- typescript-language-server (superseded by vtsls). Keep this list and Mason in sync.
 			require("mason-lspconfig").setup({
 				automatic_enable = {
-					-- vtsls is the TypeScript server. lspconfig: "It is not recommended to enable
-					-- both vtsls and ts_ls at the same time!" -- they would double-attach and run
-					-- two tsservers. typescript-language-server may still be installed in Mason
-					-- from before the swap; this keeps it inert. Remove it with :Mason if you like.
+					-- Belt and braces: vtsls is the TypeScript server, and lspconfig warns "It is not
+					-- recommended to enable both vtsls and ts_ls at the same time!" -- they would
+					-- double-attach and run two tsservers. typescript-language-server is uninstalled,
+					-- so this only matters if something reinstalls it.
 					exclude = { "ts_ls" },
 				},
 			})
