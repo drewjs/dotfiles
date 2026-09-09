@@ -1,2 +1,7 @@
 nvim/.config/nvim/plugin/packer_compiled.lua
 zsh/.zshrc.local
+todos/
+docs/
+
+# wayfinder maps / agent context (local only)
+.scratch/

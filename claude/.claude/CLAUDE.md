@@ -36,3 +36,9 @@ Do NOT build broad horizontal layers without a working tracer bullet first.
 
 After any correction or new insight, propose a specific rule to add to Auto Memory.
 Never repeat the same mistake twice.
+
+## graphify
+- **graphify** (`~/.claude/skills/graphify/SKILL.md`) - any input to knowledge graph. Trigger: `/graphify`
+When the user types `/graphify`, invoke the Skill tool with `skill: "graphify"` before doing anything else.
+
+@RTK.md

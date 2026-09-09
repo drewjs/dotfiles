@@ -52,4 +52,4 @@ keybind = alt+backspace=text:\x1b\x7f
 keybind = super+backspace=text:\x15
 
 # Shift+Enter sends literal newline (useful for Claude Code / multi-line input)
-keybind = shift+enter=text:\n
+keybind = shift+enter=text:\x1b\r
