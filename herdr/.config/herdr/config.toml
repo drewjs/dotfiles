@@ -18,7 +18,7 @@ prefix = "ctrl+a"
 
 # tmux: C-h/j/k/l with an is_vim guard.
 # Direct ctrl+hjkl is deliberately NOT bound here — nvim and zsh claim those and
-# call `herdr pane focus` themselves (see nvim/.../plugins/tmux-navigation.lua and
+# call `herdr pane focus` themselves (see nvim/.../drewjs/multiplexer.lua and
 # zsh/.zshrc), which reproduces the is_vim behavior without a ps hack.
 focus_pane_left = "prefix+h"
 focus_pane_down = "prefix+j"
