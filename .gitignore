@@ -5,3 +5,9 @@ docs/
 
 # wayfinder maps / agent context (local only)
 .scratch/
+
+# herdr runtime state (it writes into its config dir, which is stow-symlinked)
+herdr/.config/herdr/sessions/
+herdr/.config/herdr/.plugins.lock
+herdr/.config/herdr/*.log
+herdr/.config/herdr/session.json

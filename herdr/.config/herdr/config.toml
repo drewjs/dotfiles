@@ -1,0 +1,133 @@
+# herdr config — mirrors ~/.config/tmux/tmux.conf so muscle memory carries over.
+# Reference: `herdr --default-config` · validate: `herdr config check`
+# Live reload: prefix+r (or `herdr server reload-config`)
+#
+# herdr's model:  workspace ≈ tmux session, tab ≈ tmux window, pane ≈ pane.
+
+onboarding = false
+
+[terminal]
+# tmux: every split/new-window used -c "#{pane_current_path}"
+new_cwd = "follow"
+
+[keys]
+# tmux: set -g prefix C-a
+# Double-tapping the prefix sends a literal ctrl+a, so tmux's
+# `bind-key C-a send-prefix` needs no equivalent here.
+prefix = "ctrl+a"
+
+# tmux: C-h/j/k/l with an is_vim guard.
+# Direct ctrl+hjkl is deliberately NOT bound here — nvim and zsh claim those and
+# call `herdr pane focus` themselves (see nvim/.../drewjs/multiplexer.lua and
+# zsh/.zshrc), which reproduces the is_vim behavior without a ps hack.
+focus_pane_left = "prefix+h"
+focus_pane_down = "prefix+j"
+focus_pane_up = "prefix+k"
+focus_pane_right = "prefix+l"
+
+# tmux: bind ^ last-window. No last-*tab* action exists; last-pane is the
+# nearest thing and keeps the chord.
+last_pane = "prefix+^"
+cycle_pane_next = "prefix+tab"
+cycle_pane_previous = "prefix+shift+tab"
+
+# tmux: bind \ split-window -h   (side by side)
+#       bind Enter split-window -v (stacked)
+# herdr names splits by divider orientation, the inverse of tmux's -h/-v:
+# split_vertical (vertical divider) == tmux `split-window -h`.
+split_vertical = "prefix+backslash"
+split_horizontal = "prefix+enter"
+
+# tmux: bind x kill-pane (no confirm), bind -r m resize-pane -Z
+close_pane = "prefix+x"
+zoom = "prefix+m"
+
+# tmux: bind -r - = [ ] resize-pane
+# herdr has no `-r` repeat mode, so these are single-shot. prefix+shift+r opens
+# a modal resize (hjkl/arrows) for sustained resizing.
+resize_pane_down = "prefix+minus"
+resize_pane_up = "prefix+plus"
+resize_pane_left = "prefix+["
+resize_pane_right = "prefix+]"
+resize_mode = "prefix+shift+r"
+
+# tmux: bind r source-file ~/.config/tmux/tmux.conf
+reload_config = "prefix+r"
+
+# tmux: bind c new-window
+new_tab = "prefix+c"
+previous_tab = "prefix+p"
+next_tab = "prefix+n"
+switch_tab = "prefix+1..9"
+close_tab = "prefix+shift+x"
+rename_tab = "prefix+shift+t"
+
+# tmux: bind v copy-mode. `copy_mode` is a real action in 0.9.0 even though it is
+# absent from `herdr --default-config`.
+copy_mode = "prefix+v"
+
+# No tmux analog — dumps pane scrollback into $EDITOR (nvim).
+edit_scrollback = "prefix+e"
+
+# Workspace ≈ tmux session. prefix+f runs the sessionizer (see [[keys.command]]).
+workspace_picker = "prefix+w"
+goto = "prefix+g"
+new_workspace = "prefix+shift+n"
+close_workspace = "prefix+shift+d"
+switch_workspace = "prefix+shift+1..9"
+toggle_sidebar = "prefix+b"
+detach = "prefix+d"
+
+# tmux: bind -r f run-shell "tmux neww ~/.local/bin/tmux-sessionizer"
+[[keys.command]]
+key = "prefix+f"
+type = "popup"
+command = "herdr-sessionizer"
+description = "sessionizer (fzf → workspace)"
+width = "60%"
+height = "50%"
+
+[ui]
+# tmux: set -g status-position top
+tab_bar_position = "top"
+
+# tmux windows were created without a name prompt
+prompt_new_tab_name = false
+prompt_new_workspace_name = false
+
+# tmux: bind x kill-pane had no confirmation
+confirm_close = false
+
+# tmux: set -g status-right "#{directory} #{session}"
+tab_bar_right = [
+  { type = "zoom" },
+  { type = "command", command = "basename \"$HERDR_ACTIVE_PANE_CWD\"", interval_seconds = 2, timeout_seconds = 2 },
+  { type = "datetime", format = "%H:%M" },
+]
+tab_bar_right_separator = "  "
+
+window_title = "herdr: {workspace}"
+
+[ui.sidebar.spaces]
+rows = [["state_icon", "workspace"], ["branch", "git_status"]]
+
+[theme]
+# Built-ins ship mocha ("catppuccin") and latte only. The overrides below are the
+# real Macchiato values from
+# tmux/.config/tmux/plugins/catppuccin/tmux/themes/catppuccin_macchiato_tmux.conf
+name = "catppuccin"
+
+[theme.custom]
+panel_bg = "#24273a"      # @thm_bg
+sidebar_bg = "#1e2030"    # @thm_mantle
+active_row_bg = "#363a4f" # @thm_surface_0
+selection_bg = "#494d64"  # @thm_surface_1
+surface_dim = "#181926"   # @thm_crust
+text = "#cad3f5"          # @thm_fg
+accent = "#b7bdf8"        # @thm_lavender — tmux's active-tab highlight
+red = "#ed8796"
+green = "#a6da95"
+yellow = "#eed49f"
+peach = "#f5a97f"
+mauve = "#c6a0f6"
+blue = "#8aadf4"
