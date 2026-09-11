@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# herdr analog of tmux-sessionizer: fzf a project dir, then focus or create the
+# matching herdr workspace. Workspace ≈ tmux session.
+#
+#   herdr-sessionizer [dir]     pick/create interactively in the current pane
+#   herdr-sessionizer --spawn   run it in a throwaway tab (for callers with no
+#                               tty of their own, e.g. nvim's <C-f>)
+set -euo pipefail
+
+if [[ ${1:-} == --spawn ]]; then
+    pane=$(herdr tab create --label sessionizer --focus \
+        | jq -r '.result.root_pane.pane_id')
+    herdr pane run "$pane" "HERDR_SESSIONIZER_TAB=1 herdr-sessionizer"
+    exit 0
+fi
+
+cleanup() {
+    # Only when we own a throwaway tab created by --spawn.
+    [[ -n ${HERDR_SESSIONIZER_TAB:-} && -n ${HERDR_TAB_ID:-} ]] \
+        && herdr tab close "$HERDR_TAB_ID" >/dev/null 2>&1 || true
+}
+trap cleanup EXIT
+
+if [[ $# -eq 1 ]]; then
+    selected=$1
+else
+    selected=$(find ~/work ~/projects ~ -mindepth 1 -maxdepth 1 -type d | fzf)
+fi
+
+if [[ -z $selected ]]; then
+    exit 0
+fi
+
+selected_name=$(basename "$selected" | tr . _)
+
+# Reuse an existing workspace with this label if there is one.
+existing=$(herdr workspace list \
+    | jq -r --arg n "$selected_name" \
+        '[.result.workspaces[]? | select(.label == $n) | .workspace_id] | first // empty')
+
+if [[ -n $existing ]]; then
+    herdr workspace focus "$existing" >/dev/null
+else
+    herdr workspace create --cwd "$selected" --label "$selected_name" --focus >/dev/null
+fi

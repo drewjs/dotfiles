@@ -27,8 +27,10 @@ vim.keymap.set("x", "<leader>p", [["_dP]], { desc = "[P]aste over without yank" 
 -- executable script
 vim.keymap.set("n", "<leader>x", "<cmd>!chmod +x %<CR>", { silent = true, desc = "Make file e[X]ecutable" })
 
--- tmux session
-vim.keymap.set("n", "<C-f>", "<cmd>silent !tmux neww tmux-sessionizer<CR>", { desc = "Tmux sessionizer" })
+-- Multiplexer: <C-h/j/k/l> pane navigation + <C-f> sessionizer (herdr or tmux)
+local multiplexer = require("drewjs.multiplexer")
+multiplexer.setup()
+vim.keymap.set("n", "<C-f>", multiplexer.sessionizer, { desc = "Sessionizer" })
 
 -- Clear search highlight on pressing <Esc> in normal mode
 vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<CR>", { desc = "Clear search highlight" })
@@ -57,5 +59,5 @@ vim.keymap.set("n", "S", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]],
 vim.keymap.set("n", "<leader>m", "<C-w>|<C-w>_", { desc = "[M]aximize split" })
 vim.keymap.set("n", "<leader>=", "<C-w>=", { desc = "Equalize splits" })
 
--- NOTE: C-h/j/k/l window navigation handled by nvim-tmux-navigation plugin
+-- NOTE: C-h/j/k/l window navigation handled by drewjs.multiplexer (above)
 -- NOTE: <leader>pv file explorer handled by oil.nvim plugin
