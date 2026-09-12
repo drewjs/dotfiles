@@ -11,3 +11,11 @@ herdr/.config/herdr/sessions/
 herdr/.config/herdr/.plugins.lock
 herdr/.config/herdr/*.log
 herdr/.config/herdr/session.json
+# herdr installs plugins into its own config dir: a registry, managed source
+# checkouts, and each plugin's config/state dir. All machine-local — the
+# declarative copy is herdr-plugins/.config/herdr-plugins/plugins.
+herdr/.config/herdr/plugins.json
+herdr/.config/herdr/plugins/
+
+# herdr-auto-title writes this beside its stow-symlinked config
+herdr-plugins/Library/Application Support/herdr-auto-title/manual-names.json

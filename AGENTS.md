@@ -24,6 +24,19 @@ Tuned for large monorepos (huge worktree trees beside tiny source trees):
 - Keep Mason's `ensure_installed` pruned: `automatic_enable` turns on every installed
   server, and a stray server's `root_dir`/`before_init` can attach on unexpected filetypes.
 
+## Herdr plugins
+
+`herdr-plugins/` is the one package for every plugin: the manifest at
+`.config/herdr-plugins/plugins` (`<id> <owner/repo> <ref>`, pinned — Herdr has no
+`plugin update`) and each plugin's own config beside it. `herdr-plugins-sync`
+applies it and keeps the `claude` agent integration current; it needs Go on PATH
+because plugins build from source at install.
+
+Plugins are global to the user and started by the *server*, so nothing runs until
+`herdr server stop` — never run that unprompted, it closes the live session.
+Auto Title reads `~/Library/Application Support/herdr-auto-title/config.env`, not
+the config dir `herdr plugin list` prints, and only at startup.
+
 ## Herdr
 
 Mirrors `tmux.conf` binding-for-binding. Validate edits with `herdr config check` —
