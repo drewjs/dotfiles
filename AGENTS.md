@@ -26,16 +26,22 @@ Tuned for large monorepos (huge worktree trees beside tiny source trees):
 
 ## Herdr plugins
 
-`herdr-plugins/` is the one package for every plugin: the manifest at
-`.config/herdr-plugins/plugins` (`<id> <owner/repo> <ref>`, pinned — Herdr has no
-`plugin update`) and each plugin's own config beside it. `herdr-plugins-sync`
-applies it and keeps the `claude` agent integration current; it needs Go on PATH
-because plugins build from source at install.
+`herdr-plugins/` holds them all: the manifest at `.config/herdr-plugins/plugins`
+(`<id> <owner/repo> <ref>`) and each plugin's config. Add a line, run
+`herdr-plugins-sync`. Refs are pinned — Herdr has no `plugin update`, so a bumped
+ref is a reinstall and the sync treats it as one.
 
-Plugins are global to the user and started by the *server*, so nothing runs until
-`herdr server stop` — never run that unprompted, it closes the live session.
-Auto Title reads `~/Library/Application Support/herdr-auto-title/config.env`, not
-the config dir `herdr plugin list` prints, and only at startup.
+Only a *server* restart starts a plugin, and `herdr server stop` closes the live
+session — leave that one to the user.
+
+Two CLI shapes `--help` omits: `herdr plugin install <owner/repo>` takes its flags
+after the positional, and `plugin list --json` keys entries on `plugin_id` (the
+envelope's `id` is the CLI request).
+
+Herdr writes its registry and source checkouts into its stow-symlinked config dir,
+i.e. into this repo — both gitignored. A plugin's own config goes where the plugin
+looks, rarely the dir `herdr plugin list` prints: Auto Title reads
+`~/Library/Application Support/herdr-auto-title/config.env`, once, at startup.
 
 ## Herdr
 
