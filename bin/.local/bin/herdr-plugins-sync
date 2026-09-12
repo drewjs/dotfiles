@@ -53,7 +53,6 @@ while read -r id source ref _; do
     # installs a new plugin and moves a pinned one to another ref.
     [[ $have == "-" ]] && report "$id" "installing $source@$ref" \
                        || report "$id" "repinning $source $have -> $ref"
-    command -v go >/dev/null || die "$id builds from source and needs Go on PATH"
     run herdr plugin install "$source" --ref "$ref" --yes
     changed=true
 done < "$MANIFEST"

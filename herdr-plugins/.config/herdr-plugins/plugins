@@ -12,3 +12,4 @@
 # (the session comes back with `herdr`).
 
 herdr.auto-title  kryptamine/herdr-auto-title  v0.5.0
+chmarax.herdr-nvim  ChmaraX/herdr-nvim  v1.0.0

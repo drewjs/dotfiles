@@ -43,6 +43,9 @@ i.e. into this repo — both gitignored. A plugin's own config goes where the pl
 looks, rarely the dir `herdr plugin list` prints: Auto Title reads
 `~/Library/Application Support/herdr-auto-title/config.env`, once, at startup.
 
+A plugin can have a second half elsewhere — herdr-nvim ships an nvim plugin from
+the same repo. Pin both halves to one tag so a bump moves them together.
+
 ## Herdr
 
 Mirrors `tmux.conf` binding-for-binding. Validate edits with `herdr config check` —

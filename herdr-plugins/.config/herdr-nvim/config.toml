@@ -1,0 +1,30 @@
+# herdr-nvim, herdr side — https://github.com/ChmaraX/herdr-nvim
+#
+# The nvim side is configured where every other nvim plugin is:
+# nvim/.config/nvim/lua/drewjs/plugins/herdr-nvim.lua.
+#
+# Every line below is the default, so this file as it stands changes nothing.
+# A missing or malformed file falls back to the same values.
+
+[sidebar]
+# Binary used to spawn the per-tab nvim daemon.
+#nvim_bin = "nvim"
+
+# Env overrides for that nvim — the daemon, the sidebar window, and open-file
+# clients. Only needed under a custom NVIM_APPNAME, which this setup does not
+# use, so the sidebar runs ~/.config/nvim like every other nvim here.
+#nvim_env = []
+
+# right (default), left, top, or bottom.
+#position = "right"
+
+[picker]
+# Pane lines scanned by the fallback text-scrape, for agents herdr does not track.
+#scan_lines = 300
+
+# Session entries shown before you type. A typed query searches the whole repo,
+# uncapped.
+#max_files = 20
+
+# Let fff reuse ~/.cache/nvim/fff_nvim read-only, so often-opened files rank higher.
+#frecency = true

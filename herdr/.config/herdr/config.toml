@@ -87,6 +87,21 @@ description = "sessionizer (fzf → workspace)"
 width = "60%"
 height = "50%"
 
+# herdr-nvim: a full-height nvim beside the agent, and a picker over the files it
+# touched. No tmux analog. prefix+e already dumps scrollback into nvim, so the
+# sidebar takes the shifted pair of it.
+[[keys.command]]
+key = "prefix+shift+e"
+type = "plugin_action"
+command = "chmarax.herdr-nvim.toggle"
+description = "nvim sidebar"
+
+[[keys.command]]
+key = "prefix+o"
+type = "plugin_action"
+command = "chmarax.herdr-nvim.pick-file"
+description = "open file from agent output"
+
 [ui]
 # tmux: set -g status-position top
 tab_bar_position = "top"
