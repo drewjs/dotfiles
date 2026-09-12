@@ -66,6 +66,9 @@ rename_tab = "prefix+shift+t"
 # absent from `herdr --default-config`.
 copy_mode = "prefix+v"
 
+# No tmux analog — dumps pane scrollback into $EDITOR (nvim).
+# edit_scrollback = "prefix+e"
+
 # Workspace ≈ tmux session. prefix+f runs the sessionizer (see [[keys.command]]).
 workspace_picker = "prefix+w"
 goto = "prefix+g"
