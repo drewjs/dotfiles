@@ -66,9 +66,6 @@ rename_tab = "prefix+shift+t"
 # absent from `herdr --default-config`.
 copy_mode = "prefix+v"
 
-# No tmux analog — dumps pane scrollback into $EDITOR (nvim).
-edit_scrollback = "prefix+e"
-
 # Workspace ≈ tmux session. prefix+f runs the sessionizer (see [[keys.command]]).
 workspace_picker = "prefix+w"
 goto = "prefix+g"
@@ -88,10 +85,10 @@ width = "60%"
 height = "50%"
 
 # herdr-nvim: a full-height nvim beside the agent, and a picker over the files it
-# touched. No tmux analog. prefix+e already dumps scrollback into nvim, so the
-# sidebar takes the shifted pair of it.
+# touched. No tmux analog. prefix+e is the plugin's own default, freed up by
+# dropping edit_scrollback — dumping scrollback into nvim went unused.
 [[keys.command]]
-key = "prefix+shift+e"
+key = "prefix+e"
 type = "plugin_action"
 command = "chmarax.herdr-nvim.toggle"
 description = "nvim sidebar"
