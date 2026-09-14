@@ -44,7 +44,9 @@ looks, rarely the dir `herdr plugin list` prints: Auto Title reads
 `~/Library/Application Support/herdr-auto-title/config.env`, once, at startup.
 
 A plugin can have a second half elsewhere — herdr-nvim ships an nvim plugin from
-the same repo. Pin both halves to one tag so a bump moves them together.
+the same repo. Pin both halves to one tag so a bump moves them together: the
+manifest for the herdr half, and `Lazy! update <plugin>` for the nvim one, since
+`Lazy! install` leaves an already-cloned plugin on its old tag.
 
 ## Herdr
 

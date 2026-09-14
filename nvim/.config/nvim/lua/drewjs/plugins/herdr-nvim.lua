@@ -12,7 +12,7 @@
 return {
 	{
 		"ChmaraX/herdr-nvim",
-		tag = "v1.0.0",
+		tag = "v1.0.1",
 		event = "VeryLazy",
 		opts = {},
 	},
