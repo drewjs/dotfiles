@@ -43,8 +43,8 @@ To turn a plugin off without uninstalling it, `herdr plugin disable <plugin-id>`
 
 Herdr writes its registry and source checkouts into its stow-symlinked config dir,
 i.e. into this repo — both gitignored. A plugin's own config goes where the plugin
-looks, rarely the dir `herdr plugin list` prints: Auto Title reads
-`~/Library/Application Support/herdr-auto-title/config.env`, once, at startup.
+looks, rarely the dir `herdr plugin list` prints — check the plugin's own docs
+instead of assuming its config sits under the config-dir path Herdr reports.
 
 A plugin can have a second half elsewhere — herdr-nvim ships an nvim plugin from
 the same repo. Pin both halves to one tag so a bump moves them together: the
