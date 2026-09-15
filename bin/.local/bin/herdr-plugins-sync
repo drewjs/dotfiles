@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# Bring this machine's Herdr plugins in line with the manifest in the dotfiles.
+#
+#   herdr-plugins-sync            install anything missing, report the rest
+#   herdr-plugins-sync --dry-run  say what would happen, change nothing
+#
+# Idempotent: safe to re-run, and it is the bootstrap step on a new machine.
+# It never stops the Herdr server — that would kill running agents — so it
+# prints the restart reminder instead.
+set -euo pipefail
+
+MANIFEST=${HERDR_PLUGINS_MANIFEST:-$HOME/.config/herdr-plugins/plugins}
+# Agent integrations are Herdr's own hooks, not plugins, but Auto Title depends
+# on the Claude one to read a session's topic, so they are kept current here.
+INTEGRATIONS=(claude)
+
+dry_run=false
+[[ ${1:-} == --dry-run ]] && dry_run=true
+
+die() { printf 'herdr-plugins-sync: %s\n' "$1" >&2; exit 1; }
+run() { if $dry_run; then printf '  would run: %s\n' "$*"; else "$@"; fi; }
+report() { printf '%-20s %s\n' "$1" "$2"; }
+
+command -v herdr >/dev/null || die "herdr is not on PATH"
+[[ -f $MANIFEST ]] || die "no manifest at $MANIFEST (is the herdr-plugins package stowed?)"
+
+# One "<id> <ref> <enabled>" line per installed plugin. The entry key is
+# `plugin_id`; the envelope's own top-level "id" is the CLI request, not a
+# plugin, which is why this reads the array rather than grepping the body.
+installed=$(herdr plugin list --json | python3 -c '
+import json, sys
+for p in json.load(sys.stdin)["result"]["plugins"]:
+    print(p["plugin_id"], p.get("source", {}).get("requested_ref", "-"), json.dumps(p["enabled"]))
+')
+changed=false
+
+while read -r id source ref _; do
+    [[ -z ${id:-} || $id == \#* ]] && continue
+    [[ -n ${source:-} && -n ${ref:-} ]] || die "malformed manifest line for '$id'"
+
+    read -r _ have enabled < <(grep -m1 "^$id " <<<"$installed" || echo "- - -")
+
+    if [[ $have == "$ref" ]]; then
+        if [[ $enabled == true ]]; then
+            report "$id" "$ref, installed"
+        else
+            report "$id" "$ref, installed but disabled (herdr plugin enable $id)"
+        fi
+        continue
+    fi
+
+    # Reinstalling replaces the managed checkout, so the same command both
+    # installs a new plugin and moves a pinned one to another ref.
+    [[ $have == "-" ]] && report "$id" "installing $source@$ref" \
+                       || report "$id" "repinning $source $have -> $ref"
+    run herdr plugin install "$source" --ref "$ref" --yes
+    changed=true
+done < "$MANIFEST"
+
+for integration in "${INTEGRATIONS[@]}"; do
+    status=$(herdr integration status | sed -n "s/^$integration: //p")
+    case $status in
+        current*) report "integration:$integration" "current" ;;
+        *)        report "integration:$integration" "installing (${status:-unknown})"
+                  run herdr integration install "$integration"
+                  changed=true ;;
+    esac
+done
+
+if $changed && ! $dry_run; then
+    cat <<'MSG'
+
+Plugins are started by the Herdr server when it restores a session, so nothing
+above is running yet. When you are at a good stopping point:
+
+    herdr server stop   # closes the session; `herdr` brings it back
+
+Reopening a terminal is not enough — that attaches a new client and leaves the
+server, and its plugins, exactly as they were.
+MSG
+fi

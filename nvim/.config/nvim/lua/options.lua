@@ -17,6 +17,12 @@ vim.opt.relativenumber = true
 -- Save undo history
 vim.opt.undofile = true
 
+-- Indent width. A tab rendered at nvim's default 8 columns eats a third of the
+-- herdr-nvim sidebar before any code shows; 4 keeps nesting readable in a pane
+-- that narrow. vim-sleuth still detects tabs-vs-spaces per file.
+vim.opt.tabstop = 4
+vim.opt.shiftwidth = 4
+
 -- gutter
 vim.opt.colorcolumn = "80"
 

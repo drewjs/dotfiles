@@ -3,6 +3,9 @@ zsh/.zshrc.local
 todos/
 docs/
 
+# macOS Finder metadata
+**/.DS_Store
+
 # wayfinder maps / agent context (local only)
 .scratch/
 
@@ -11,3 +14,10 @@ herdr/.config/herdr/sessions/
 herdr/.config/herdr/.plugins.lock
 herdr/.config/herdr/*.log
 herdr/.config/herdr/session.json
+# pane_history writes scrollback here; may contain secrets
+herdr/.config/herdr/session-history.json
+# herdr installs plugins into its own config dir: a registry, managed source
+# checkouts, and each plugin's config/state dir. All machine-local — the
+# declarative copy is herdr-plugins/.config/herdr-plugins/plugins.
+herdr/.config/herdr/plugins.json
+herdr/.config/herdr/plugins/

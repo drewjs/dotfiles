@@ -12,6 +12,10 @@ return {
 			words = { enabled = true },
 			dim = { enabled = true },
 			indent = { enabled = true },
+			-- vim.ui.input as a float at the cursor. The stock version prompts on
+			-- the cmdline, one line at the very bottom — easy to miss entirely in
+			-- the herdr-nvim sidebar, where annotations are typed.
+			input = { enabled = true },
 			scratch = { enabled = true },
 			gitbrowse = { enabled = true },
 			toggle = { enabled = true },

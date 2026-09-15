@@ -24,6 +24,33 @@ Tuned for large monorepos (huge worktree trees beside tiny source trees):
 - Keep Mason's `ensure_installed` pruned: `automatic_enable` turns on every installed
   server, and a stray server's `root_dir`/`before_init` can attach on unexpected filetypes.
 
+## Herdr plugins
+
+`herdr-plugins/` holds them all: the manifest at `.config/herdr-plugins/plugins`
+(`<id> <owner/repo> <ref>`) and each plugin's config. Add a line, run
+`herdr-plugins-sync`. Refs are pinned — Herdr has no `plugin update`, so a bumped
+ref is a reinstall and the sync treats it as one.
+
+Only a *server* restart starts a plugin, and `herdr server stop` closes the live
+session — leave that one to the user.
+
+Two CLI shapes `--help` omits: `herdr plugin install <owner/repo>` takes its flags
+after the positional, and `plugin list --json` keys entries on `plugin_id` (the
+envelope's `id` is the CLI request).
+
+To turn a plugin off without uninstalling it, `herdr plugin disable <plugin-id>` (and
+`enable` to reverse) — leave it in the manifest so the sync doesn't reinstall it.
+
+Herdr writes its registry and source checkouts into its stow-symlinked config dir,
+i.e. into this repo — both gitignored. A plugin's own config goes where the plugin
+looks, rarely the dir `herdr plugin list` prints — check the plugin's own docs
+instead of assuming its config sits under the config-dir path Herdr reports.
+
+A plugin can have a second half elsewhere — herdr-nvim ships an nvim plugin from
+the same repo. Pin both halves to one tag so a bump moves them together: the
+manifest for the herdr half, and `Lazy! update <plugin>` for the nvim one, since
+`Lazy! install` leaves an already-cloned plugin on its old tag.
+
 ## Herdr
 
 Mirrors `tmux.conf` binding-for-binding. Validate edits with `herdr config check` —

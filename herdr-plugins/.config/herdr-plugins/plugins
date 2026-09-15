@@ -1,0 +1,18 @@
+# Herdr plugins to install, one per line: <plugin-id> <owner/repo[/subdir]> <ref>
+#
+# The id is the one the plugin declares in its herdr-plugin.toml; it is what
+# `herdr plugin list` reports, so the sync needs it to tell installed from not.
+#
+# Applied by `herdr-plugins-sync`. Refs are pinned because Herdr has no
+# `plugin update` — a reinstall is how a plugin moves forward, so bump the ref
+# here and re-run the sync.
+#
+# Plugins are global to the user, not per-session, and are started by the Herdr
+# *server*, so a newly installed plugin does nothing until `herdr server stop`
+# (the session comes back with `herdr`).
+
+chmarax.herdr-nvim  ChmaraX/herdr-nvim  v1.0.1
+# Only real tag (rust-lite-v0.1.0) is a stale Lite-only checkpoint predating
+# most current features (e.g. copy-archive); this plugin versions via internal
+# .version-file bumps on main, not git tags, so we track main.
+annotate  plannotator/herdr-annotate  main
