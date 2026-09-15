@@ -38,6 +38,9 @@ Two CLI shapes `--help` omits: `herdr plugin install <owner/repo>` takes its fla
 after the positional, and `plugin list --json` keys entries on `plugin_id` (the
 envelope's `id` is the CLI request).
 
+To turn a plugin off without uninstalling it, `herdr plugin disable <plugin-id>` (and
+`enable` to reverse) — leave it in the manifest so the sync doesn't reinstall it.
+
 Herdr writes its registry and source checkouts into its stow-symlinked config dir,
 i.e. into this repo — both gitignored. A plugin's own config goes where the plugin
 looks, rarely the dir `herdr plugin list` prints: Auto Title reads
