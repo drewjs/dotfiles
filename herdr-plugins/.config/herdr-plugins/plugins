@@ -12,3 +12,7 @@
 # (the session comes back with `herdr`).
 
 chmarax.herdr-nvim  ChmaraX/herdr-nvim  v1.0.1
+# Only real tag (rust-lite-v0.1.0) is a stale Lite-only checkpoint predating
+# most current features (e.g. copy-archive); this plugin versions via internal
+# .version-file bumps on main, not git tags, so we track main.
+annotate  plannotator/herdr-annotate  main
