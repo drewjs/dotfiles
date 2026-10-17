@@ -1,0 +1,21 @@
+# Tool registry for install.sh. Adding a tool means adding one line here.
+#
+#   tool      Name for --only, --skip, and --pick.
+#   stow      Stow package directory in this repo, or - for none.
+#   brew      Comma-separated Homebrew formulae, cask:<name> for casks, or -.
+#             Use canonical names (neovim, not nvim) so reruns see them as installed.
+#   needs     Comma-separated tools this tool cannot work without, or -.
+#   profiles  Comma-separated profiles besides full (full has every tool), or -.
+#   about     Rest of the line. Shown by --list and --pick.
+#
+# tool    stow      brew                                                  needs     profiles  about
+bin       bin       fzf,jq                                                -         -         Sessionizer and helper scripts in ~/.local/bin
+claude    claude    cask:claude-code                                      -         -         Claude Code with the global CLAUDE.md
+ghostty   ghostty   cask:ghostty                                          -         -         Ghostty terminal
+herdr     herdr     herdr                                                 -         -         herdr terminal multiplexer
+nvim      nvim      neovim,tree-sitter-cli,ripgrep                        -         minimal   Neovim 0.12+ with the tree-sitter CLI and ripgrep
+skhd      skhd      koekeishiya/formulae/skhd                             yabai     -         Hotkey daemon that drives yabai
+starship  starship  starship                                              -         minimal   Starship prompt
+tmux      tmux      tmux                                                  -         -         tmux with the catppuccin theme submodule
+yabai     yabai     koekeishiya/formulae/yabai                            -         -         Tiling window manager
+zsh       zsh       fnm,fzf,zsh-autosuggestions,zsh-syntax-highlighting   starship  minimal   Zsh config with fnm, fzf, and plugins
