@@ -20,13 +20,14 @@ MOVED=''
 
 usage() {
   cat <<'EOF'
-Usage: ./install.sh [--profile NAME | --only A,B | --pick] [--skip A,B] [--list] [--dry-run]
+Usage: ./install.sh [--profile NAME | --only A,B] [--skip A,B] [--list] [--dry-run]
+       ./install.sh --pick [--list] [--dry-run]
 
 Selection. Saved in tools.local; a bare run reuses it, a first bare run means --profile full.
   --profile NAME   every tool tagged NAME in tools.txt (full = every tool)
   --only A,B       exactly these tools, plus the tools they need
   --skip A,B       leave these tools out
-  --pick           choose tools from a list
+  --pick           choose tools from a numbered list instead
 
   --list           print tools, profiles, and the selection, then exit
   -n, --dry-run    print what would change, change nothing
