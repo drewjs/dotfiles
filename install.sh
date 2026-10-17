@@ -382,7 +382,7 @@ stow_packages() {
   }
   n=$(printf '%s\n' "$out" | grep -c -E '^(LINK|MKDIR|UNLINK|RMDIR):' || true)
   [ "$n" -gt 0 ] || return 0
-  say "Linked $n paths"
+  say "Stowed ${STOW_PKGS[*]}"
   changed
 }
 
