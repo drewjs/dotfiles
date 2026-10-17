@@ -14,6 +14,7 @@ SRC=$(cd "$(dirname "$0")/../.." && pwd -P)
 REPO=$SRC
 [ "${FROM_ZERO:-0}" = 0 ] || REPO=$HOME/dotfiles
 WORK=$(mktemp -d)
+SELECTION="$HOME/Library/Application Support/dotfiles/selection"
 EXPECT=$1
 shift
 
@@ -143,8 +144,45 @@ snapshot() {
     find "$HOME/.dotfiles-backup" 2>/dev/null | sort
     echo '# repo'
     git -C "$REPO" status --porcelain
-    cat "$REPO/tools.local"
+    echo '# selection'
+    stat -f '%m' "$SELECTION"
+    cat "$SELECTION"
   } >"$1"
+}
+
+check_selection() {
+  local got
+  case $SELECTION in
+    "$REPO"/*) fail "selection is inside the checkout: $SELECTION" ;;
+  esac
+  [ -f "$SELECTION" ] || fail "selection was not saved at $SELECTION"
+  [ ! -e "$REPO/tools.local" ] || fail "tools.local was written inside the checkout"
+  got=$(cat "$SELECTION")
+  [ "$got" = "$*" ] || fail "selection is '$got', expected the request '$*'"
+  case $got in
+    --profile\ * | --only\ *) ;;
+    *) fail "selection does not store a request: $got" ;;
+  esac
+  ok "selection remembers the request outside the checkout: $got"
+}
+
+check_reclone_sees_selection() {
+  local copy list
+  copy=$(mktemp -d)
+  cp -a "$REPO" "$copy/repo"
+  list=$("$copy/repo/install.sh" --list)
+  rm -rf "$copy"
+  printf '%s\n' "$list" | grep -F "selected by $(cat "$SELECTION")" >/dev/null ||
+    fail "a re-clone did not read the saved request"
+  ok "a re-clone reads the saved request"
+}
+
+check_audit() {
+  snapshot "$WORK/before-audit"
+  "$REPO/install.sh" --audit || fail "--audit reported a miss"
+  snapshot "$WORK/after-audit"
+  diff -u "$WORK/before-audit" "$WORK/after-audit" || fail "--audit changed Homebrew, links, backups, the selection, or the repo"
+  ok "--audit is clean and changed nothing"
 }
 
 check_rerun_is_noop() {
@@ -178,6 +216,9 @@ check_installed
 check_linked
 check_backups
 check_outside
+check_selection "$@"
+check_reclone_sees_selection
 check_rerun_is_noop
 check_outside
+check_audit
 echo "PASS: $EXPECT"

@@ -1,6 +1,5 @@
 nvim/.config/nvim/plugin/packer_compiled.lua
 zsh/.zshrc.local
-tools.local
 todos/
 docs/
 

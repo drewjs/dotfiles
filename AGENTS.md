@@ -12,9 +12,12 @@ Each directory mirrors its target path under `$HOME`: XDG configs nest under `.c
 
 `tools.txt` is the only tool registry: `install.sh`, `--list`, `--pick`, and CI all read it.
 `install.sh` runs before Homebrew exists, so it must parse and run on macOS's `/bin/bash` 3.2
-(no associative arrays, no `mapfile`, no empty `"${arr[@]}"` under `set -u`). The `install`
-workflow proves full and subset installs, rerun no-ops, and backups on free macOS runners via
-`.github/scripts/verify-install.sh`.
+(no associative arrays, no `mapfile`, no empty `"${arr[@]}"` under `set -u`). The machine's
+request (`--profile`, `--only`, `--skip`) is saved at
+`~/Library/Application Support/dotfiles/selection`, not in the repo. `--audit` checks
+packages and links without installing or stowing. Brew installs export
+`HOMEBREW_NO_AUTO_UPDATE=1`. The `install` workflow proves full and subset installs, rerun
+no-ops, and backups on free macOS runners via `.github/scripts/verify-install.sh`.
 
 ## Neovim
 

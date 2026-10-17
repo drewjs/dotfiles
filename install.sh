@@ -4,13 +4,18 @@
 set -euo pipefail
 set -f
 
+# brew install refreshes Homebrew when this is unset. A rerun must not.
+export HOMEBREW_NO_AUTO_UPDATE=1
+
 REPO_URL=${DOTFILES_REPO:-https://github.com/drewjs/dotfiles.git}
 MANIFEST=tools.txt
-STATE=tools.local
+# The request (--profile / --only / --skip), outside the checkout, so a re-clone still sees it.
+STATE_DIR="$HOME/Library/Application Support/dotfiles"
+STATE="$STATE_DIR/selection"
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd -P) || HERE=''
 REPO=''
 
-PROFILE='' ONLY='' SKIP='' PICK=0 LIST=0 DRY_RUN=0 SELECTING=0
+PROFILE='' ONLY='' SKIP='' PICK=0 LIST=0 DRY_RUN=0 AUDIT=0 SELECTING=0
 T_NAME=() T_STOW=() T_BREW=() T_NEEDS=() T_PROFILES=() T_ABOUT=()
 SELECTED=''
 STOW_PKGS=()
@@ -22,12 +27,16 @@ usage() {
   cat <<'EOF'
 Usage: ./install.sh [--profile NAME | --only A,B] [--skip A,B] [--list] [--dry-run]
        ./install.sh --pick [--list] [--dry-run]
+       ./install.sh --audit
 
-Selection. Saved in tools.local; a bare run reuses it, a first bare run means --profile full.
+Selection is saved outside the checkout, in ~/Library/Application Support/dotfiles/selection.
+The file stores the request (--profile, --only, --skip), not the dependency-expanded set.
+A bare run reuses it. A first bare run means --profile full. A re-clone on the same Mac still sees it.
   --profile NAME   every tool tagged NAME in tools.txt (full = every tool)
   --only A,B       exactly these tools, plus the tools they need
   --skip A,B       leave these tools out
   --pick           choose tools from a numbered list instead
+  --audit          install nothing and stow nothing; exit non-zero on a miss
 
   --list           print tools, profiles, and the selection, then exit
   -n, --dry-run    print what would change, change nothing
@@ -68,6 +77,7 @@ parse_args() {
         ;;
       --profile=* | --only=* | --skip=*) set_selection "${1%%=*}" "${1#*=}" ;;
       --pick) PICK=1 ;;
+      --audit) AUDIT=1 ;;
       --list) LIST=1 ;;
       -n | --dry-run) DRY_RUN=1 ;;
       -h | --help)
@@ -125,16 +135,17 @@ load_manifest() {
 
 load_state() {
   local words=()
-  read -r -a words <"$REPO/$STATE" || true
+  read -r -a words <"$STATE" || true
   parse_args ${words[@]+"${words[@]}"}
 }
 
 save_state() {
   local want
   want=$(request)
-  [ ! -f "$REPO/$STATE" ] || [ "$(cat "$REPO/$STATE")" != "$want" ] || return 0
-  printf '%s\n' "$want" >"$REPO/$STATE.tmp"
-  mv "$REPO/$STATE.tmp" "$REPO/$STATE"
+  [ ! -f "$STATE" ] || [ "$(cat "$STATE")" != "$want" ] || return 0
+  mkdir -p "$STATE_DIR"
+  printf '%s\n' "$want" >"$STATE.tmp"
+  mv "$STATE.tmp" "$STATE"
   say "Saved this machine's selection to $STATE: $want"
   changed
 }
@@ -387,6 +398,143 @@ stow_packages() {
   changed
 }
 
+selected_stow() {
+  local p
+  [ ${#STOW_PKGS[@]} -gt 0 ] || return 1
+  for p in "${STOW_PKGS[@]}"; do
+    [ "$p" != "$1" ] || return 0
+  done
+  return 1
+}
+
+known_stow() {
+  local i
+  for i in "${!T_NAME[@]}"; do
+    [ "${T_STOW[$i]}" != "$1" ] || return 0
+  done
+  return 1
+}
+
+# Package name under $REPO that this symlink points at, if it points into the checkout.
+link_repo_pkg() {
+  local target dir rel
+  target=$(readlink "$1") || return 1
+  case $target in
+    /*) ;;
+    *) target=$(dirname "$1")/$target ;;
+  esac
+  if [ -d "$target" ]; then
+    dir=$(cd -P "$target" 2>/dev/null && pwd -P) || return 1
+  else
+    dir=$(cd -P "$(dirname "$target")" 2>/dev/null && pwd -P) || return 1
+    dir=$dir/$(basename "$target")
+  fi
+  case $dir/ in
+    "$REPO"/*) ;;
+    *) return 1 ;;
+  esac
+  rel=${dir#"$REPO/"}
+  printf '%s\n' "${rel%%/*}"
+}
+
+home_links() {
+  local root
+  # -P is an option, not a predicate, and it has to precede the path (macOS find and GNU find).
+  find -P "$HOME" -maxdepth 1 -type l -print
+  for root in "$HOME/.config" "$HOME/.local" "$HOME/.claude"; do
+    if [ -d "$root" ] && [ ! -L "$root" ]; then
+      find -P "$root" \( -name .git -o -name node_modules -o -name Cache -o -name Caches \) -prune -o -type l -print
+    fi
+  done
+}
+
+audit_packages() {
+  local have_f=' ' have_c=' ' wanted=stow t i p name brew miss=0
+  if brew=$(find_brew); then
+    eval "$("$brew" shellenv)"
+    have_f=" $(brew list --formula -1 | tr '\n' ' ') "
+    have_c=" $(brew list --cask -1 | tr '\n' ' ') "
+  else
+    printf 'install.sh: Homebrew is not installed\n' >&2
+    miss=1
+  fi
+  for t in $SELECTED; do
+    i=$(tool_index "$t")
+    wanted="$wanted ${T_BREW[$i]//,/ }"
+  done
+  for p in $wanted; do
+    case $p in
+      -) ;;
+      cask:*)
+        name=${p#cask:}
+        has "$have_c" "${name##*/}" || {
+          printf 'install.sh: missing cask %s\n' "${name##*/}" >&2
+          miss=1
+        }
+        ;;
+      *)
+        has "$have_f" "${p##*/}" || {
+          printf 'install.sh: missing formula %s\n' "${p##*/}" >&2
+          miss=1
+        }
+        ;;
+    esac
+  done
+  [ "$miss" = 0 ]
+}
+
+audit_stow() {
+  local out n status=0
+  if ! command -v stow >/dev/null 2>&1; then
+    printf 'install.sh: stow is not installed\n' >&2
+    return 1
+  fi
+  [ ${#STOW_PKGS[@]} -gt 0 ] || return 0
+  out=$(stow -n --dir "$REPO" --target "$HOME" --verbose=1 "${STOW_PKGS[@]}" 2>&1) || status=$?
+  if [ "$status" -ne 0 ]; then
+    printf '%s\n' "$out" >&2
+    printf 'install.sh: stow -n failed for %s\n' "${STOW_PKGS[*]}" >&2
+    return 1
+  fi
+  n=$(printf '%s\n' "$out" | grep -c -E '^(LINK|MKDIR|UNLINK|RMDIR):' || true)
+  [ "$n" -eq 0 ] || {
+    printf '%s\n' "$out" >&2
+    printf 'install.sh: stow -n would change %s\n' "${STOW_PKGS[*]}" >&2
+    return 1
+  }
+}
+
+audit_stray() {
+  local link pkg miss=0 links
+  links=$(mktemp)
+  if ! home_links >"$links"; then
+    rm -f "$links"
+    printf 'install.sh: could not list symlinks under %s\n' "$HOME" >&2
+    return 1
+  fi
+  while IFS= read -r link; do
+    [ -n "$link" ] || continue
+    pkg=$(link_repo_pkg "$link") || continue
+    known_stow "$pkg" || continue
+    selected_stow "$pkg" && continue
+    printf 'install.sh: %s points into unselected package %s\n' "$link" "$pkg" >&2
+    miss=1
+  done <"$links"
+  rm -f "$links"
+  [ "$miss" = 0 ]
+}
+
+# Installs nothing and stows nothing. Exits non-zero if a selected package is
+# missing, stow -n is not clean, or a symlink points into an unselected package.
+audit() {
+  local miss=0
+  audit_packages || miss=1
+  audit_stow || miss=1
+  audit_stray || miss=1
+  [ "$miss" = 0 ] || exit 1
+  say "Audit clean: $SELECTED"
+}
+
 bootstrap() {
   local dir=${DOTFILES_DIR:-$HOME/dotfiles}
   if [ ! -f "$dir/$MANIFEST" ]; then
@@ -402,10 +550,14 @@ bootstrap() {
 main() {
   parse_args "$@"
   [ "$PICK" = 0 ] || [ "$SELECTING" = 0 ] || die "--pick cannot be combined with --profile, --only, or --skip"
-  [ -f "$HERE/$MANIFEST" ] || bootstrap "$@"
+  [ "$AUDIT" = 0 ] || [ "$PICK" = 0 ] || die "--audit cannot be combined with --pick"
+  if [ ! -f "$HERE/$MANIFEST" ]; then
+    [ "$AUDIT" = 0 ] || die "--audit needs a checkout; it does not install or clone"
+    bootstrap "$@"
+  fi
   REPO=$HERE
   load_manifest
-  [ "$SELECTING" = 1 ] || [ ! -f "$REPO/$STATE" ] || load_state
+  [ "$SELECTING" = 1 ] || [ ! -f "$STATE" ] || load_state
   [ -n "$PROFILE$ONLY" ] || PROFILE=full
   [ -z "$PROFILE" ] || [ -z "$ONLY" ] || die "--profile and --only cannot be combined"
   resolve
@@ -415,6 +567,11 @@ main() {
   fi
   if [ "$LIST" = 1 ]; then
     list_tools
+    return 0
+  fi
+  if [ "$AUDIT" = 1 ]; then
+    say "Selected: $SELECTED"
+    audit
     return 0
   fi
 
