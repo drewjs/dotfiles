@@ -1,0 +1,54 @@
+name: install
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: |
+          command -v shellcheck >/dev/null || brew install shellcheck
+          shellcheck install.sh .github/scripts/verify-install.sh
+      - name: Parse with the stock macOS bash 3.2
+        run: |
+          /bin/bash --version | head -1
+          /bin/bash -n install.sh
+          /bin/bash -n .github/scripts/verify-install.sh
+      - name: Validate tools.txt
+        run: ./install.sh --list
+
+  full:
+    name: full install from zero
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Remove the runner's Homebrew
+        run: |
+          NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)"
+          sudo rm -rf /opt/homebrew
+          if command -v brew; then exit 1; fi
+      - name: Install everything through the curl bootstrap, rerun, and check
+        env:
+          FROM_ZERO: "1"
+        run: |
+          git checkout -B ci
+          .github/scripts/verify-install.sh all --profile full
+
+  subset:
+    name: subset install
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install a subset over the runner's Homebrew, rerun, and check
+        run: .github/scripts/verify-install.sh "nvim skhd yabai" --only nvim,skhd
