@@ -12,3 +12,5 @@ Personal configuration files for macOS development environment.
 - **tmux/** - Terminal multiplexer configuration
 - **yabai/** - Tiling window manager for macOS
 - **zsh/** - Zsh shell configuration and profile
+
+Note: this file is documentation only and does not change any package.
