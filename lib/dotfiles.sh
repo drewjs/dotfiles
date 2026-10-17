@@ -117,8 +117,40 @@ selection_file() {
   printf '%s\n' "${DOTFILES_TOOLS_FILE:-$HOME/.config/dotfiles/tools}"
 }
 
+# Stow's built-in ignore list. A file it will never link cannot be required
+# for the install to count as done.
+stow_skipped() {
+  local rel=$1
+  local base=${rel##*/}
+  case "$base" in
+    .gitignore | .hg | .svn | _darcs | RCS | .cvsignore | .gitmodules)
+      return 0
+      ;;
+    *~ | .\#*)
+      return 0
+      ;;
+  esac
+  case "$rel" in
+    .git | .git/* | */.git | */.git/*)
+      return 0
+      ;;
+    README* | LICENSE* | COPYING)
+      return 0
+      ;;
+  esac
+  return 1
+}
+
 package_files() {
-  find "$1" \( -name .git -o -name .gitmodules \) -prune -o \( -type f -o -type l \) -print | sort
+  local dir=$1 src rel
+  while IFS= read -r src; do
+    [[ -z $src ]] && continue
+    rel=${src#"$dir"/}
+    if stow_skipped "$rel"; then
+      continue
+    fi
+    printf '%s\n' "$src"
+  done < <(find "$dir" \( -name .git -o -name .gitmodules \) -prune -o \( -type f -o -type l \) -print | sort)
 }
 
 package_linked() {
@@ -365,6 +397,23 @@ link_closure() {
     [[ $acted -eq 0 ]] && return 0
   done
   echo "linking did not converge" >&2
+  local id idx pkg src rel dest
+  for id in $CLOSURE; do
+    idx=$(registry_index "$id")
+    pkg=${reg_stow[$idx]}
+    if package_linked "$pkg"; then
+      continue
+    fi
+    echo "unlinked package: $pkg" >&2
+    while IFS= read -r src; do
+      [[ -z $src ]] && continue
+      rel=${src#"$ROOT/$pkg"/}
+      dest="$HOME/$rel"
+      if [[ ! -e $dest && ! -L $dest ]] || ! same_file "$dest" "$src"; then
+        echo "  missing $rel" >&2
+      fi
+    done < <(package_files "$ROOT/$pkg")
+  done
   exit 1
 }
 
@@ -762,6 +811,27 @@ dotfiles_self_test() {
 
   dotfiles_apply zsh
   same_file "$HOME/.zshrc" "$ROOT/zsh/.zshrc"
+  same_file "$HOME/.config/starship.toml" "$ROOT/starship/.config/starship.toml"
+
+  if ! stow_skipped ".config/tmux/plugins/catppuccin/tmux/.gitignore"; then
+    echo "gitignore should be skipped" >&2
+    exit 1
+  fi
+  if stow_skipped ".config/starship.toml"; then
+    echo "starship config was treated as ignored" >&2
+    exit 1
+  fi
+  printf 'x\n' >"$ROOT/starship/.gitignore"
+  if ! (trap - EXIT; dotfiles_apply starship); then
+    rm -f "$ROOT/starship/.gitignore"
+    echo "an ignored file blocked linking" >&2
+    exit 1
+  fi
+  rm -f "$ROOT/starship/.gitignore"
+  if [[ -e $HOME/.gitignore ]]; then
+    echo "stow-ignored file was linked" >&2
+    exit 1
+  fi
   same_file "$HOME/.config/starship.toml" "$ROOT/starship/.config/starship.toml"
 
   if (trap - EXIT; dotfiles_apply not-a-tool); then
