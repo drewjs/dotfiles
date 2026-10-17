@@ -1,0 +1,142 @@
+name: setup
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  shellcheck:
+    name: shellcheck
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: brew install shellcheck
+
+      - name: shellcheck
+        run: shellcheck setup
+
+  full:
+    name: full install
+    runs-on: macos-latest
+    timeout-minutes: 30
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_ENV_HINTS: "1"
+      NONINTERACTIVE: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Record brew baseline
+        run: |
+          set -euo pipefail
+          brew list --formula --installed-on-request | sort -u > /tmp/formulas.before
+          brew list --cask --installed-on-request | sort -u > /tmp/casks.before
+
+      - name: Plant an existing zshrc
+        run: printf 'planted-config\n' > "$HOME/.zshrc"
+
+      - name: full install
+        run: |
+          set -euo pipefail
+          out=$(./setup --all)
+          [[ "$out" == changed ]]
+          [[ -L "$HOME/.zshrc" ]]
+          grep -R -q 'planted-config' "$HOME/Library/Application Support/dotfiles/backups"
+
+      - name: second run changes nothing
+        run: |
+          set -euo pipefail
+          snap() {
+            brew list --formula --installed-on-request | sort -u
+            brew list --cask --installed-on-request | sort -u
+            {
+              find "$HOME" -maxdepth 1 -type l -print
+              if [[ -d "$HOME/.config" && ! -L "$HOME/.config" ]]; then
+                find "$HOME/.config" -maxdepth 2 -type l -print
+              fi
+              if [[ -d "$HOME/.local" && ! -L "$HOME/.local" ]]; then
+                find "$HOME/.local" -maxdepth 2 -type l -print
+              fi
+            } | sort | while IFS= read -r path; do
+              printf '%s %s\n' "$path" "$(readlink "$path")"
+            done
+            backup="$HOME/Library/Application Support/dotfiles/backups"
+            if [[ -d "$backup" ]]; then
+              find "$backup" -print | sort
+            fi
+          }
+          snap > /tmp/snap.before
+          out=$(./setup)
+          [[ "$out" == unchanged ]]
+          snap > /tmp/snap.after
+          diff -u /tmp/snap.before /tmp/snap.after
+
+      - name: full audit
+        run: ./setup --audit --baseline /tmp/formulas.before --baseline-casks /tmp/casks.before
+
+  subset:
+    name: subset install
+    runs-on: macos-latest
+    timeout-minutes: 30
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_ENV_HINTS: "1"
+      NONINTERACTIVE: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Record brew baseline
+        run: |
+          set -euo pipefail
+          brew list --formula --installed-on-request | sort -u > /tmp/formulas.before
+          brew list --cask --installed-on-request | sort -u > /tmp/casks.before
+
+      - name: subset install
+        run: |
+          set -euo pipefail
+          out=$(./setup --only bin,starship)
+          [[ "$out" == changed ]]
+          [[ -d "$HOME/.config" && ! -L "$HOME/.config" ]]
+          [[ -L "$HOME/.config/starship.toml" ]]
+          [[ -d "$HOME/.local" && ! -L "$HOME/.local" ]]
+          [[ -L "$HOME/.local/bin" ]]
+          [[ -x "$HOME/.local/bin/herdr-sessionizer" ]]
+
+      - name: second run changes nothing
+        run: |
+          set -euo pipefail
+          snap() {
+            brew list --formula --installed-on-request | sort -u
+            brew list --cask --installed-on-request | sort -u
+            {
+              find "$HOME" -maxdepth 1 -type l -print
+              if [[ -d "$HOME/.config" && ! -L "$HOME/.config" ]]; then
+                find "$HOME/.config" -maxdepth 2 -type l -print
+              fi
+              if [[ -d "$HOME/.local" && ! -L "$HOME/.local" ]]; then
+                find "$HOME/.local" -maxdepth 2 -type l -print
+              fi
+            } | sort | while IFS= read -r path; do
+              printf '%s %s\n' "$path" "$(readlink "$path")"
+            done
+            backup="$HOME/Library/Application Support/dotfiles/backups"
+            if [[ -d "$backup" ]]; then
+              find "$backup" -print | sort
+            fi
+          }
+          snap > /tmp/snap.before
+          out=$(./setup)
+          [[ "$out" == unchanged ]]
+          snap > /tmp/snap.after
+          diff -u /tmp/snap.before /tmp/snap.after
+
+      - name: nothing outside the subset
+        run: ./setup --audit --baseline /tmp/formulas.before --baseline-casks /tmp/casks.before
