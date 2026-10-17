@@ -1,0 +1,19 @@
+#!/bin/bash
+set -euo pipefail
+unset CDPATH
+root=$(cd -- {{ .chezmoi.sourceDir | quote }}/.. && pwd) || exit 1
+tools=(
+{{- $toolsFile := joinPath .chezmoi.homeDir ".config/dotfiles/tools" }}
+{{- if stat $toolsFile }}
+{{- range splitList "\n" (include $toolsFile) }}
+{{- if . }}
+  {{ . | quote }}
+{{- end }}
+{{- end }}
+{{- end }}
+)
+if [[ ${#tools[@]} -eq 0 ]]; then
+  echo "no tools selected" >&2
+  exit 1
+fi
+exec "$root/lib/dotfiles.sh" apply "${tools[@]}"

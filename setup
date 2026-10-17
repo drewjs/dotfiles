@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+unset CDPATH
+ROOT=$(cd -- "$(dirname -- "$0")" && pwd)
+# shellcheck source=lib/dotfiles.sh
+. "$ROOT/lib/dotfiles.sh"
+
+usage() {
+  cat <<'EOF'
+Usage: ./setup [--yes] [--all | --tools id,id]
+
+./setup installs the tools you choose and links their configs.
+Pass --all or press return to install every tool.
+Pass --tools with a comma-separated list to install that subset.
+The choice is saved on this machine. A later ./setup with no arguments repeats it.
+EOF
+}
+
+YES=0
+ALL=0
+TOOLS_ARG=""
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --yes)
+      YES=1
+      shift
+      ;;
+    --all)
+      ALL=1
+      shift
+      ;;
+    --tools)
+      if [[ $# -lt 2 ]]; then
+        echo "setup: --tools needs a comma-separated list" >&2
+        exit 2
+      fi
+      TOOLS_ARG=$2
+      shift 2
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "setup: unknown argument: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+
+prompt_ids() {
+  printf 'Tools: '
+  registry_ids | sort | paste -sd ' ' -
+  printf '\n'
+  printf 'Enter a comma-separated subset, or press return for all: '
+  local line
+  IFS= read -r line || true
+  if [[ -z $line ]]; then
+    registry_ids | sort -u
+  else
+    parse_id_list "$line"
+  fi
+}
+
+resolve_selection() {
+  if [[ -n $TOOLS_ARG ]]; then
+    parse_id_list "$TOOLS_ARG"
+    return
+  fi
+  if [[ $ALL -eq 1 ]]; then
+    registry_ids | sort -u
+    return
+  fi
+  local file
+  file=$(selection_file)
+  if [[ -f $file ]]; then
+    parse_id_list "$(paste -sd ',' "$file")"
+    return
+  fi
+  if [[ $YES -eq 1 || ! -t 0 ]]; then
+    registry_ids | sort -u
+    return
+  fi
+  prompt_ids
+}
+
+ensure_command() {
+  local cmd=$1 formula=$2
+  if command -v "$cmd" >/dev/null 2>&1; then
+    return 0
+  fi
+  brew install "$formula"
+}
+
+ensure_brew() {
+  if load_brew; then
+    return 0
+  fi
+  local zprof="$HOME/.zprofile"
+  # Copy, do not move. The Homebrew installer appends to the live file.
+  if [[ -e $zprof || -L $zprof ]]; then
+    copy_backup "$zprof"
+  fi
+  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  load_brew
+}
+
+registry_load
+registry_check
+
+if [[ $(uname -s) == Darwin && ${DOTFILES_SKIP_BREW:-} != 1 ]]; then
+  export HOMEBREW_NO_AUTO_UPDATE=1
+  export HOMEBREW_NO_ENV_HINTS=1
+  export NONINTERACTIVE=1
+  ensure_brew
+  ensure_command chezmoi chezmoi
+  ensure_command stow stow
+fi
+
+if ! command -v chezmoi >/dev/null 2>&1 || ! command -v stow >/dev/null 2>&1; then
+  echo "setup: chezmoi and stow must be installed" >&2
+  exit 1
+fi
+
+ids=()
+while IFS= read -r line; do
+  [[ -n $line ]] && ids[${#ids[@]}]=$line
+done < <(resolve_selection)
+
+if [[ ${#ids[@]} -eq 0 ]]; then
+  echo "setup: no tools selected" >&2
+  exit 1
+fi
+
+save_selection "${ids[@]}"
+
+exec chezmoi apply --source "$ROOT/chezmoi" --destination "$HOME" --no-tty

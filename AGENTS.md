@@ -8,6 +8,8 @@ Each directory mirrors its target path under `$HOME`: XDG configs nest under `.c
 (`nvim/.config/nvim/`), home-root dotfiles sit directly (`skhd/.skhdrc`), scripts go in
 `bin/.local/bin/`. New tool: mirror this layout, then `stow <tool>`.
 
+`./setup` installs a chosen subset on a fresh Mac. Append one row to `tools.tsv` to make a package installable. `stow <tool>` from the repo root still links that package on its own.
+
 ## Neovim
 
 Requires nvim 0.12+ and the `tree-sitter-cli` Homebrew formula — `nvim-treesitter` tracks

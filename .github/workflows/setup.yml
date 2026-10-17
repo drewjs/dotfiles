@@ -1,0 +1,78 @@
+name: setup
+
+on:
+  pull_request:
+  push:
+    branches:
+      - arena/chezmoi
+
+jobs:
+  shellcheck:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install lint tools
+        run: brew install shellcheck stow chezmoi
+
+      - name: shellcheck
+        run: shellcheck setup lib/dotfiles.sh
+
+      - name: Linker self-test
+        run: ./lib/dotfiles.sh self-test
+
+  subset:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Baseline
+        run: ./lib/dotfiles.sh snapshot > "$RUNNER_TEMP/before.txt"
+
+      - name: Install subset
+        run: ./setup --tools starship --yes
+
+      - name: Nothing outside the subset
+        run: ./lib/dotfiles.sh verify --before "$RUNNER_TEMP/before.txt" starship
+
+      - name: First snapshot
+        run: ./lib/dotfiles.sh snapshot > "$RUNNER_TEMP/after1.txt"
+
+      - name: Second run
+        run: ./setup --yes
+
+      - name: Second run changes nothing
+        run: |
+          ./lib/dotfiles.sh snapshot > "$RUNNER_TEMP/after2.txt"
+          diff -u "$RUNNER_TEMP/after1.txt" "$RUNNER_TEMP/after2.txt"
+
+  full:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Baseline
+        run: ./lib/dotfiles.sh snapshot > "$RUNNER_TEMP/before.txt"
+
+      - name: Install all tools
+        run: ./setup --all --yes
+
+      - name: Selected tools are present
+        run: ./lib/dotfiles.sh verify --before "$RUNNER_TEMP/before.txt" --all
+
+      - name: First snapshot
+        run: ./lib/dotfiles.sh snapshot > "$RUNNER_TEMP/after1.txt"
+
+      - name: Second run
+        run: ./setup --all --yes
+
+      - name: Second run changes nothing
+        run: |
+          ./lib/dotfiles.sh snapshot > "$RUNNER_TEMP/after2.txt"
+          diff -u "$RUNNER_TEMP/after1.txt" "$RUNNER_TEMP/after2.txt"
