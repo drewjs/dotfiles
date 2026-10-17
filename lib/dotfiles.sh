@@ -29,9 +29,8 @@ registry_load() {
     formulae=""
     casks=""
     depends=""
-    IFS=$'\t' read -r id stow formulae casks depends <<EOF
-$line
-EOF
+    # Pipe, not tab. Bash read treats tab as whitespace and drops empty columns.
+    IFS='|' read -r id stow formulae casks depends <<<"$line"
     reg_id[reg_n]=$id
     reg_stow[reg_n]=$stow
     reg_formulae[reg_n]=$formulae
@@ -699,6 +698,24 @@ dotfiles_self_test() {
   export DOTFILES_SKIP_BREW=1
   unset DOTFILES_TOOLS_FILE || true
   mkdir -p "$HOME"
+  registry_load
+  local gidx zidx sidx
+  gidx=$(registry_index ghostty)
+  zidx=$(registry_index zsh)
+  sidx=$(registry_index starship)
+  if [[ ${reg_casks[$gidx]} != ghostty || -n ${reg_formulae[$gidx]} ]]; then
+    echo "ghostty must be a cask" >&2
+    exit 1
+  fi
+  if [[ ${reg_formulae[$sidx]} != starship || -n ${reg_casks[$sidx]} ]]; then
+    echo "starship must be a formula" >&2
+    exit 1
+  fi
+  if [[ ${reg_depends[$zidx]} != starship || -n ${reg_casks[$zidx]} ]]; then
+    echo "zsh must depend on starship" >&2
+    exit 1
+  fi
+
   sum=$(python3 -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' "$ROOT/starship/.config/starship.toml")
 
   dotfiles_snapshot >"$tmp/before.txt"

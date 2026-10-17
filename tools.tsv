@@ -1,14 +1,14 @@
-# id	stow package	formulae	casks	depends
+# id|stow package|formulae|casks|depends
 # formulae, casks, and depends are comma-separated. Empty columns stay empty.
 # Add a tool by adding one row. The package directory is the existing Stow package.
 # zsh depends on starship because the shell config starts starship.
-bin	bin			
-claude	claude			
-ghostty	ghostty		ghostty	
-herdr	herdr	herdr		
-nvim	nvim	neovim,tree-sitter-cli,ripgrep		
-skhd	skhd	asmvik/formulae/skhd		
-starship	starship	starship		
-tmux	tmux	tmux		
-yabai	yabai	asmvik/formulae/yabai		
-zsh	zsh	fzf,fnm,zsh-autosuggestions,zsh-syntax-highlighting		starship
+bin|bin|||
+claude|claude|||
+ghostty|ghostty||ghostty|
+herdr|herdr|herdr||
+nvim|nvim|neovim,tree-sitter-cli,ripgrep||
+skhd|skhd|asmvik/formulae/skhd||
+starship|starship|starship||
+tmux|tmux|tmux||
+yabai|yabai|asmvik/formulae/yabai||
+zsh|zsh|fzf,fnm,zsh-autosuggestions,zsh-syntax-highlighting||starship
