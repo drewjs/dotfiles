@@ -6,7 +6,15 @@ macOS dotfiles managed with GNU Stow. Each top-level directory is a stow package
 
 Each directory mirrors its target path under `$HOME`: XDG configs nest under `.config/`
 (`nvim/.config/nvim/`), home-root dotfiles sit directly (`skhd/.skhdrc`), scripts go in
-`bin/.local/bin/`. New tool: mirror this layout, then `stow <tool>`.
+`bin/.local/bin/`. New tool: mirror this layout, add its line to `tools.txt`, then `./install.sh`.
+
+## Installer
+
+`tools.txt` is the only tool registry: `install.sh`, `--list`, `--pick`, and CI all read it.
+`install.sh` runs before Homebrew exists, so it must parse and run on macOS's `/bin/bash` 3.2
+(no associative arrays, no `mapfile`, no empty `"${arr[@]}"` under `set -u`). The `install`
+workflow proves full and subset installs, rerun no-ops, and backups on free macOS runners via
+`.github/scripts/verify-install.sh`.
 
 ## Neovim
 
