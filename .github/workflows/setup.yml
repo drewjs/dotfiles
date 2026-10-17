@@ -37,7 +37,7 @@ jobs:
         run: |
           set -euo pipefail
           brew list --formula --installed-on-request | sort -u > /tmp/formulas.before
-          brew list --cask --installed-on-request | sort -u > /tmp/casks.before
+          brew list --cask | sort -u > /tmp/casks.before
 
       - name: Plant an existing zshrc
         run: printf 'planted-config\n' > "$HOME/.zshrc"
@@ -55,7 +55,7 @@ jobs:
           set -euo pipefail
           snap() {
             brew list --formula --installed-on-request | sort -u
-            brew list --cask --installed-on-request | sort -u
+            brew list --cask | sort -u
             {
               find "$HOME" -maxdepth 1 -type l -print
               if [[ -d "$HOME/.config" && ! -L "$HOME/.config" ]]; then
@@ -97,7 +97,7 @@ jobs:
         run: |
           set -euo pipefail
           brew list --formula --installed-on-request | sort -u > /tmp/formulas.before
-          brew list --cask --installed-on-request | sort -u > /tmp/casks.before
+          brew list --cask | sort -u > /tmp/casks.before
 
       - name: subset install
         run: |
@@ -115,7 +115,7 @@ jobs:
           set -euo pipefail
           snap() {
             brew list --formula --installed-on-request | sort -u
-            brew list --cask --installed-on-request | sort -u
+            brew list --cask | sort -u
             {
               find "$HOME" -maxdepth 1 -type l -print
               if [[ -d "$HOME/.config" && ! -L "$HOME/.config" ]]; then

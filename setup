@@ -461,14 +461,15 @@ require_installed() {
 }
 
 audit_delta() {
-  local baseline="$1" flag="$2" kind="$3" now allowed extra
+  local baseline="$1" kind="$2" now allowed extra
   [[ -n "$baseline" ]] || return 0
   [[ -f "$baseline" ]] || die "missing baseline $baseline"
   now=$(mktemp)
   allowed=$(mktemp)
-  if ! brew list "$flag" --installed-on-request > "$now"; then
-    rm -f "$now" "$allowed"
-    die "brew list $flag --installed-on-request failed"
+  if [[ "$kind" == formula ]]; then
+    brew list --formula --installed-on-request > "$now"
+  else
+    brew list --cask > "$now"
   fi
   sort -u -o "$now" "$now"
   collect_allowed "$kind" "$allowed"
@@ -494,8 +495,8 @@ audit() {
   require_installed cask --cask
   audit_stow_clean
   audit_links
-  audit_delta "$BASE_F" --formula formula
-  audit_delta "$BASE_C" --cask cask
+  audit_delta "$BASE_F" formula
+  audit_delta "$BASE_C" cask
 }
 
 parse_args() {
