@@ -20,7 +20,6 @@ herdr/.config/herdr/release-notes.json
 # pane_history writes scrollback here; may contain secrets
 herdr/.config/herdr/session-history.json
 # herdr installs plugins into its own config dir: a registry, managed source
-# checkouts, and each plugin's config/state dir. All machine-local — the
-# declarative copy is herdr-plugins/.config/herdr-plugins/plugins.
+# checkouts, and each plugin's config/state dir. All machine-local.
 herdr/.config/herdr/plugins.json
 herdr/.config/herdr/plugins/
