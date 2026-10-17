@@ -18,7 +18,7 @@ EXPECT=$1
 shift
 
 PRUNE=(-name .git)
-for d in Library work runners hostedtoolcache .Trash .dotfiles-backup; do
+for d in Library work runners actions-runner hostedtoolcache .Trash .dotfiles-backup; do
   PRUNE+=(-o -path "$HOME/$d")
 done
 
