@@ -311,8 +311,40 @@ ensure_stow() {
   CHANGED=1
 }
 
+can_trust() {
+  if [[ -z "${CAN_TRUST:-}" ]]; then
+    if brew trust --help >/dev/null 2>&1; then
+      CAN_TRUST=1
+    else
+      CAN_TRUST=0
+    fi
+  fi
+  [[ "$CAN_TRUST" -eq 1 ]]
+}
+
+spec_for() {
+  local name="$1" item="$2" tap count=0 one=""
+  if [[ "$item" == */* ]]; then
+    printf '%s\n' "$item"
+    return
+  fi
+  while IFS= read -r tap; do
+    [[ -n "$tap" ]] || continue
+    count=$((count + 1))
+    one=$tap
+  done < <(card_values "$ROOT/cards/$name" tap)
+  if [[ "$count" -gt 1 ]]; then
+    die "card $name has more than one tap, so $item needs a tap prefix"
+  fi
+  if [[ "$count" -eq 1 ]]; then
+    printf '%s/%s\n' "$one" "$item"
+    return
+  fi
+  printf '%s\n' "$item"
+}
+
 install_selected() {
-  local name tapfile tap formula cask
+  local name tapfile tap formula cask spec short
   tapfile=$(mktemp)
   brew tap > "$tapfile"
   while IFS= read -r name; do
@@ -327,17 +359,29 @@ install_selected() {
     done < <(card_values "$ROOT/cards/$name" tap)
     while IFS= read -r formula; do
       [[ -n "$formula" ]] || continue
-      if ! brew list --formula "$formula" >/dev/null 2>&1; then
-        brew install "$formula" >&2
-        CHANGED=1
+      short=${formula##*/}
+      if brew list --formula "$short" >/dev/null 2>&1; then
+        continue
       fi
+      spec=$(spec_for "$name" "$formula")
+      if [[ "$spec" == */* ]] && can_trust; then
+        brew trust --formula "$spec" >&2
+      fi
+      brew install "$spec" >&2
+      CHANGED=1
     done < <(card_values "$ROOT/cards/$name" formula)
     while IFS= read -r cask; do
       [[ -n "$cask" ]] || continue
-      if ! brew list --cask "$cask" >/dev/null 2>&1; then
-        brew install --cask "$cask" >&2
-        CHANGED=1
+      short=${cask##*/}
+      if brew list --cask "$short" >/dev/null 2>&1; then
+        continue
       fi
+      spec=$(spec_for "$name" "$cask")
+      if [[ "$spec" == */* ]] && can_trust; then
+        brew trust --cask "$spec" >&2
+      fi
+      brew install --cask "$spec" >&2
+      CHANGED=1
     done < <(card_values "$ROOT/cards/$name" cask)
   done < "$SELECTION"
   rm -f "$tapfile"
