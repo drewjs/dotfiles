@@ -1,0 +1,568 @@
+#!/usr/bin/env bash
+# macOS ships bash 3.2. This script stays inside that version.
+set -euo pipefail
+
+ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
+STATE_DIR="$HOME/Library/Application Support/dotfiles"
+SELECTION="$STATE_DIR/selection"
+CHANGED=0
+BACKUP_DIR=""
+ALL=0
+AUDIT=0
+ONLY=""
+BASE_F=""
+BASE_C=""
+
+die() {
+  printf '%s\n' "$1" >&2
+  exit 1
+}
+
+usage() {
+  cat <<'EOF'
+usage: setup [--all | --only tool[,tool...]]
+       setup --audit --baseline formulas.txt --baseline-casks casks.txt
+
+With no flags, setup applies the tools saved for this Mac.
+The first run asks once. Press return to install every tool.
+EOF
+}
+
+list_cards() {
+  find "$ROOT/cards" -mindepth 1 -maxdepth 1 -type f -exec basename {} \; | sort
+}
+
+validate_card() {
+  local file="$1"
+  awk '
+    /^[[:space:]]*(#|$)/ { next }
+    {
+      if (split($0, f, /[[:space:]]+/) < 2) {
+        print "card line needs a key and a value: " $0 > "/dev/stderr"
+        exit 2
+      }
+      key = f[1]
+      val = f[2]
+      if (key != "formula" && key != "cask" && key != "tap") {
+        print "unknown card key: " key > "/dev/stderr"
+        exit 2
+      }
+      if (key == "tap") {
+        if (val !~ /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/) {
+          print "bad tap: " val > "/dev/stderr"
+          exit 2
+        }
+      } else if (val !~ /^[A-Za-z0-9@+_.-]+$/) {
+        print "bad package: " val > "/dev/stderr"
+        exit 2
+      }
+    }
+  ' "$file"
+}
+
+card_values() {
+  local file="$1" key="$2"
+  awk -v key="$key" '
+    /^[[:space:]]*(#|$)/ { next }
+    {
+      split($0, f, /[[:space:]]+/)
+      if (f[1] == key) print f[2]
+    }
+  ' "$file"
+}
+
+valid_name() {
+  case "$1" in
+    "" | -* | *[!a-z0-9-]*) return 1 ;;
+  esac
+  return 0
+}
+
+load_catalog() {
+  local name
+  [[ -d "$ROOT/cards" ]] || die "missing cards directory"
+  while IFS= read -r name; do
+    [[ -n "$name" ]] || continue
+    valid_name "$name" || die "bad tool name: $name"
+    [[ -f "$ROOT/cards/$name" ]] || die "missing card: $name"
+    [[ -d "$ROOT/$name" ]] || die "tool $name has no package directory"
+    validate_card "$ROOT/cards/$name"
+  done < <(list_cards)
+}
+
+abs_path() {
+  local p="$1" base dir
+  if [[ -d "$p" && ! -L "$p" ]]; then
+    (cd "$p" && pwd -P)
+    return
+  fi
+  base=$(basename "$p")
+  dir=$(dirname "$p")
+  (cd "$dir" && printf '%s/%s\n' "$(pwd -P)" "$base")
+}
+
+link_abs() {
+  local link="$1" raw dir
+  raw=$(readlink "$link") || return 1
+  if [[ "$raw" = /* ]]; then
+    printf '%s\n' "$raw"
+    return 0
+  fi
+  dir=$(dirname "$link")
+  (
+    cd "$dir" || exit 1
+    cd "$(dirname "$raw")" || exit 1
+    printf '%s/%s\n' "$(pwd -P)" "$(basename "$raw")"
+  )
+}
+
+same_node() {
+  local dst="$1" src="$2" got want
+  [[ -L "$dst" ]] || return 1
+  got=$(link_abs "$dst") || return 1
+  want=$(abs_path "$src") || return 1
+  [[ "$got" == "$want" ]]
+}
+
+backup_one() {
+  local path="$1" rel dest
+  rel="${path#"$HOME"/}"
+  if [[ -z "$BACKUP_DIR" ]]; then
+    BACKUP_DIR="$STATE_DIR/backups/$(date -u +%Y%m%dT%H%M%SZ)"
+  fi
+  dest="$BACKUP_DIR/$rel"
+  mkdir -p "$(dirname "$dest")"
+  cp -pRP "$path" "$dest"
+  if [[ ! -e "$dest" && ! -L "$dest" ]]; then
+    die "backup failed for $path"
+  fi
+  rm -rf "$path"
+  CHANGED=1
+}
+
+walk_conflicts() {
+  local src_dir="$1" dst_dir="$2" out="$3" src base dst
+  while IFS= read -r src; do
+    [[ -n "$src" ]] || continue
+    base=$(basename "$src")
+    dst="$dst_dir/$base"
+    if [[ -d "$src" && ! -L "$src" ]]; then
+      if [[ -d "$dst" && ! -L "$dst" ]]; then
+        walk_conflicts "$src" "$dst" "$out"
+      elif [[ -e "$dst" || -L "$dst" ]]; then
+        if ! same_node "$dst" "$src"; then
+          printf '%s\n' "$dst" >> "$out"
+        fi
+      fi
+    elif [[ -e "$dst" || -L "$dst" ]]; then
+      if ! same_node "$dst" "$src"; then
+        printf '%s\n' "$dst" >> "$out"
+      fi
+    fi
+  done < <(find "$src_dir" -mindepth 1 -maxdepth 1)
+}
+
+clear_conflicts() {
+  local name="$1" file path
+  file=$(mktemp)
+  walk_conflicts "$ROOT/$name" "$HOME" "$file"
+  if [[ -s "$file" ]]; then
+    while IFS= read -r path; do
+      [[ -n "$path" ]] || continue
+      backup_one "$path"
+    done < "$file"
+  fi
+  rm -f "$file"
+}
+
+packages_with_child() {
+  local child="$1" n=0 name
+  while IFS= read -r name; do
+    [[ -n "$name" ]] || continue
+    if [[ -e "$ROOT/$name/$child" || -L "$ROOT/$name/$child" ]]; then
+      n=$((n + 1))
+    fi
+  done < "$SELECTION"
+  printf '%s\n' "$n"
+}
+
+# Stow folds a missing parent into a symlink to the first package.
+# That would make ~/.config or ~/.local point at one tool and hide every other file.
+prepare_shared() {
+  local base="$1" dir count target want name
+  dir="$HOME/$base"
+  count=$(packages_with_child "$base")
+  if [[ "$count" -eq 0 ]]; then
+    return
+  fi
+  if [[ -L "$dir" ]]; then
+    target=$(link_abs "$dir" || true)
+    if [[ "$count" -eq 1 ]]; then
+      while IFS= read -r name; do
+        if [[ -e "$ROOT/$name/$base" || -L "$ROOT/$name/$base" ]]; then
+          want=$(abs_path "$ROOT/$name/$base")
+          if [[ "$target" == "$want" ]]; then
+            return
+          fi
+        fi
+      done < "$SELECTION"
+    fi
+    backup_one "$dir"
+    mkdir "$dir"
+    return
+  fi
+  if [[ -e "$dir" ]]; then
+    if [[ ! -d "$dir" ]]; then
+      backup_one "$dir"
+      mkdir "$dir"
+    fi
+    return
+  fi
+  mkdir "$dir"
+  CHANGED=1
+}
+
+write_selection() {
+  local tmp="$1" name
+  [[ -s "$tmp" ]] || die "no tools selected"
+  while IFS= read -r name; do
+    [[ -n "$name" ]] || continue
+    [[ -f "$ROOT/cards/$name" ]] || die "unknown tool: $name"
+  done < "$tmp"
+  mkdir -p "$STATE_DIR"
+  if [[ -f "$SELECTION" ]] && cmp -s "$tmp" "$SELECTION"; then
+    rm -f "$tmp"
+    return
+  fi
+  mv "$tmp" "$SELECTION"
+  CHANGED=1
+}
+
+choose_selection() {
+  local tmp answer name
+  tmp=$(mktemp)
+  if [[ -n "$ONLY" ]]; then
+    printf '%s\n' "$ONLY" | tr ' ' '\n' | sed '/^$/d' | sort -u > "$tmp"
+    write_selection "$tmp"
+    return
+  fi
+  if [[ "$ALL" -eq 1 ]]; then
+    list_cards > "$tmp"
+    write_selection "$tmp"
+    return
+  fi
+  if [[ -f "$SELECTION" ]]; then
+    rm -f "$tmp"
+    return
+  fi
+  if [[ -t 0 && -z "${CI:-}" ]]; then
+    printf 'Tools: ' >/dev/tty
+    list_cards | tr '\n' ' ' >/dev/tty
+    printf '\nPress return for all, or type the tools you want:\n' >/dev/tty
+    IFS= read -r answer </dev/tty || answer=""
+    if [[ -z "${answer// /}" ]]; then
+      list_cards > "$tmp"
+    else
+      printf '%s\n' "$answer" | tr ',' '\n' | tr ' ' '\n' | sed '/^$/d' | sort -u > "$tmp"
+    fi
+    write_selection "$tmp"
+    return
+  fi
+  list_cards > "$tmp"
+  write_selection "$tmp"
+}
+
+ensure_brew() {
+  export HOMEBREW_NO_AUTO_UPDATE=1
+  export HOMEBREW_NO_ENV_HINTS=1
+  export HOMEBREW_NO_ANALYTICS=1
+  export HOMEBREW_CASK_OPTS="${HOMEBREW_CASK_OPTS:---no-quarantine}"
+  export NONINTERACTIVE=1
+  if command -v brew >/dev/null 2>&1; then
+    return
+  fi
+  if [[ -x /opt/homebrew/bin/brew ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+    return
+  fi
+  if [[ -x /usr/local/bin/brew ]]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+    return
+  fi
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  if [[ -x /opt/homebrew/bin/brew ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [[ -x /usr/local/bin/brew ]]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  else
+    die "Homebrew install did not produce a brew binary"
+  fi
+  hash -r
+  CHANGED=1
+}
+
+ensure_stow() {
+  if command -v stow >/dev/null 2>&1; then
+    return
+  fi
+  brew install stow >&2
+  hash -r
+  command -v stow >/dev/null 2>&1 || die "stow is not on PATH"
+  CHANGED=1
+}
+
+install_selected() {
+  local name tapfile tap formula cask
+  tapfile=$(mktemp)
+  brew tap > "$tapfile"
+  while IFS= read -r name; do
+    [[ -n "$name" ]] || continue
+    while IFS= read -r tap; do
+      [[ -n "$tap" ]] || continue
+      if ! grep -qx "$tap" "$tapfile"; then
+        brew tap "$tap" >&2
+        printf '%s\n' "$tap" >> "$tapfile"
+        CHANGED=1
+      fi
+    done < <(card_values "$ROOT/cards/$name" tap)
+    while IFS= read -r formula; do
+      [[ -n "$formula" ]] || continue
+      if ! brew list --formula "$formula" >/dev/null 2>&1; then
+        brew install "$formula" >&2
+        CHANGED=1
+      fi
+    done < <(card_values "$ROOT/cards/$name" formula)
+    while IFS= read -r cask; do
+      [[ -n "$cask" ]] || continue
+      if ! brew list --cask "$cask" >/dev/null 2>&1; then
+        brew install --cask "$cask" >&2
+        CHANGED=1
+      fi
+    done < <(card_values "$ROOT/cards/$name" cask)
+  done < "$SELECTION"
+  rm -f "$tapfile"
+  hash -r
+}
+
+stow_selected() {
+  local name out status tmp
+  local -a names
+  prepare_shared .config
+  prepare_shared .local
+  while IFS= read -r name; do
+    [[ -n "$name" ]] || continue
+    clear_conflicts "$name"
+    names+=("$name")
+  done < "$SELECTION"
+  [[ ${#names[@]} -gt 0 ]] || die "no tools selected"
+  tmp=$(mktemp)
+  set +e
+  stow -v -d "$ROOT" -t "$HOME" "${names[@]}" > "$tmp" 2>&1
+  status=$?
+  set -e
+  if [[ $status -ne 0 ]]; then
+    cat "$tmp" >&2
+    rm -f "$tmp"
+    die "stow failed"
+  fi
+  if grep -E -q '^(LINK|UNLINK|MKDIR):' "$tmp"; then
+    CHANGED=1
+  fi
+  rm -f "$tmp"
+}
+
+collect_allowed() {
+  local kind="$1" dest="$2" name value
+  : > "$dest"
+  while IFS= read -r name; do
+    [[ -n "$name" ]] || continue
+    while IFS= read -r value; do
+      [[ -n "$value" ]] || continue
+      printf '%s\n' "$value" >> "$dest"
+    done < <(card_values "$ROOT/cards/$name" "$kind")
+  done < "$SELECTION"
+  if [[ "$kind" == formula ]]; then
+    printf '%s\n' stow >> "$dest"
+  fi
+  sort -u -o "$dest" "$dest"
+}
+
+repo_links() {
+  local out="$1" dir
+  : > "$out"
+  find "$HOME" -maxdepth 1 -type l >> "$out"
+  for dir in "$HOME/.config" "$HOME/.local" "$HOME/.claude"; do
+    if [[ -d "$dir" && ! -L "$dir" ]]; then
+      find "$dir" -maxdepth 2 -type l >> "$out"
+    fi
+  done
+}
+
+audit_links() {
+  local links link target pkg
+  local bad=""
+  links=$(mktemp)
+  repo_links "$links"
+  while IFS= read -r link; do
+    [[ -n "$link" ]] || continue
+    target=$(link_abs "$link" || true)
+    case "$target" in
+      "$ROOT"/*)
+        pkg=${target#"$ROOT/"}
+        pkg=${pkg%%/*}
+        if ! grep -qx "$pkg" "$SELECTION"; then
+          bad="link $link points at unselected package $pkg"
+          break
+        fi
+        ;;
+    esac
+  done < "$links"
+  rm -f "$links"
+  [[ -z "$bad" ]] || die "$bad"
+}
+
+audit_stow_clean() {
+  local tmp status name
+  local -a names
+  while IFS= read -r name; do
+    [[ -n "$name" ]] || continue
+    names+=("$name")
+  done < "$SELECTION"
+  [[ ${#names[@]} -gt 0 ]] || die "no tools selected"
+  tmp=$(mktemp)
+  set +e
+  stow -n -v -d "$ROOT" -t "$HOME" "${names[@]}" > "$tmp" 2>&1
+  status=$?
+  set -e
+  if [[ $status -ne 0 ]]; then
+    cat "$tmp" >&2
+    rm -f "$tmp"
+    die "selected tools are not stowed"
+  fi
+  if grep -E -q '^(LINK|UNLINK|MKDIR):' "$tmp"; then
+    cat "$tmp" >&2
+    rm -f "$tmp"
+    die "selected tools are missing links"
+  fi
+  rm -f "$tmp"
+}
+
+require_installed() {
+  local kind="$1" flag="$2" name value
+  while IFS= read -r name; do
+    [[ -n "$name" ]] || continue
+    while IFS= read -r value; do
+      [[ -n "$value" ]] || continue
+      if ! brew list "$flag" "$value" >/dev/null 2>&1; then
+        die "missing $kind $value for $name"
+      fi
+    done < <(card_values "$ROOT/cards/$name" "$kind")
+  done < "$SELECTION"
+}
+
+audit_delta() {
+  local baseline="$1" flag="$2" kind="$3" now allowed extra
+  [[ -n "$baseline" ]] || return 0
+  [[ -f "$baseline" ]] || die "missing baseline $baseline"
+  now=$(mktemp)
+  allowed=$(mktemp)
+  if ! brew list "$flag" --installed-on-request > "$now"; then
+    rm -f "$now" "$allowed"
+    die "brew list $flag --installed-on-request failed"
+  fi
+  sort -u -o "$now" "$now"
+  collect_allowed "$kind" "$allowed"
+  local bad=""
+  extra=$(mktemp)
+  comm -13 <(sort -u "$baseline") "$now" > "$extra"
+  while IFS= read -r name; do
+    [[ -n "$name" ]] || continue
+    if ! grep -qx "$name" "$allowed"; then
+      bad="unexpected $kind $name"
+      break
+    fi
+  done < "$extra"
+  rm -f "$now" "$allowed" "$extra"
+  [[ -z "$bad" ]] || die "$bad"
+}
+
+audit() {
+  [[ -f "$SELECTION" ]] || die "this Mac has no selection yet"
+  ensure_brew
+  ensure_stow
+  require_installed formula --formula
+  require_installed cask --cask
+  audit_stow_clean
+  audit_links
+  audit_delta "$BASE_F" --formula formula
+  audit_delta "$BASE_C" --cask cask
+}
+
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --all)
+        ALL=1
+        shift
+        ;;
+      --only)
+        shift
+        [[ $# -gt 0 ]] || die "--only needs a tool list"
+        ONLY=${1//,/ }
+        shift
+        while [[ $# -gt 0 && "$1" != --* ]]; do
+          ONLY="$ONLY ${1//,/ }"
+          shift
+        done
+        ;;
+      --audit)
+        AUDIT=1
+        shift
+        ;;
+      --baseline)
+        [[ $# -ge 2 ]] || die "--baseline needs a file"
+        BASE_F=$2
+        shift 2
+        ;;
+      --baseline-casks)
+        [[ $# -ge 2 ]] || die "--baseline-casks needs a file"
+        BASE_C=$2
+        shift 2
+        ;;
+      -h | --help)
+        usage
+        exit 0
+        ;;
+      *)
+        die "unknown argument: $1"
+        ;;
+    esac
+  done
+  if [[ "$ALL" -eq 1 && -n "$ONLY" ]]; then
+    die "use either --all or --only"
+  fi
+  if [[ -n "$BASE_F$BASE_C" && "$AUDIT" -eq 0 ]]; then
+    die "--baseline is only valid with --audit"
+  fi
+}
+
+main() {
+  parse_args "$@"
+  load_catalog
+  if [[ "$AUDIT" -eq 1 ]]; then
+    audit
+    exit 0
+  fi
+  choose_selection
+  ensure_brew
+  ensure_stow
+  install_selected
+  stow_selected
+  if [[ "$CHANGED" -eq 0 ]]; then
+    printf '%s\n' unchanged
+  else
+    printf '%s\n' changed
+  fi
+}
+
+main "$@"

@@ -6,7 +6,8 @@ macOS dotfiles managed with GNU Stow. Each top-level directory is a stow package
 
 Each directory mirrors its target path under `$HOME`: XDG configs nest under `.config/`
 (`nvim/.config/nvim/`), home-root dotfiles sit directly (`skhd/.skhdrc`), scripts go in
-`bin/.local/bin/`. New tool: mirror this layout, then `stow <tool>`.
+`bin/.local/bin/`. To add a tool, add `cards/<tool>` and mirror this layout.
+`setup` reads the card. Do not edit `setup`.
 
 ## Neovim
 
