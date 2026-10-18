@@ -9,13 +9,20 @@
 #   about     Rest of the line. Shown by --list and --pick.
 #
 # tool    stow      brew                                                  needs     profiles  about
+1password -         cask:1password                                        -         -         1Password
+1password-cli -     cask:1password-cli                                    -         -         1Password CLI
 bin       bin       fzf,jq                                                -         -         Sessionizer and helper scripts in ~/.local/bin
+chrome    -         cask:google-chrome                                    -         -         Google Chrome
 claude    claude    cask:claude-code                                      -         -         Claude Code with the global CLAUDE.md
+gh        -         gh                                                    -         -         GitHub CLI
 ghostty   ghostty   cask:ghostty                                          -         -         Ghostty terminal
+git-town  -         git-town                                              -         -         Git Town
 herdr     herdr     herdr                                                 -         -         herdr terminal multiplexer
+lazygit   -         lazygit                                               -         -         Terminal UI for git
 nvim      nvim      neovim,tree-sitter-cli,ripgrep                        -         minimal   Neovim 0.12+ with the tree-sitter CLI and ripgrep
 skhd      skhd      koekeishiya/formulae/skhd                             yabai     -         Hotkey daemon that drives yabai
 starship  starship  starship                                              -         minimal   Starship prompt
 tmux      tmux      tmux                                                  -         -         tmux with the catppuccin theme submodule
+uv        -         uv                                                    -         -         Python package manager
 yabai     yabai     koekeishiya/formulae/yabai                            -         -         Tiling window manager
 zsh       zsh       fnm,fzf,zsh-autosuggestions,zsh-syntax-highlighting   starship  minimal   Zsh config with fnm, fzf, and plugins

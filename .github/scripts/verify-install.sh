@@ -79,13 +79,33 @@ seed() {
   done
 }
 
+# Same apps install.sh treats as already present in cask_outside_brew.
+cask_present() {
+  local token=$1 app
+  case $token in
+    google-chrome) app="Google Chrome.app" ;;
+    1password) app="1Password.app" ;;
+    1password-cli)
+      command -v op >/dev/null 2>&1 || return 1
+      return 0
+      ;;
+    *) return 1 ;;
+  esac
+  if [ -d "/Applications/$app" ] || [ -d "$HOME/Applications/$app" ]; then
+    return 0
+  fi
+  return 1
+}
+
 check_installed() {
   local have_f have_c f c
   have_f=" $(formulae | tr '\n' ' ') "
   have_c=" $(casks | tr '\n' ' ') "
   for f in $want_formulae; do has "$have_f" "$f" || fail "formula $f is not installed"; done
-  for c in $want_casks; do has "$have_c" "$c" || fail "cask $c is not installed"; done
-  ok "Homebrew has every selected package:$want_formulae$want_casks"
+  for c in $want_casks; do
+    has "$have_c" "$c" || cask_present "$c" || fail "cask $c is not installed"
+  done
+  ok "every selected package is present:$want_formulae$want_casks"
 }
 
 check_linked() {
@@ -178,19 +198,26 @@ check_reclone_sees_selection() {
 }
 
 check_audit() {
+  local out
   snapshot "$WORK/before-audit"
-  "$REPO/install.sh" --audit || fail "--audit reported a miss"
+  out=$("$REPO/install.sh" --audit) || fail "--audit reported a miss"
+  printf '%s\n' "$out"
+  if has "$EXPECT" zsh; then
+    printf '%s\n' "$out" | grep -F "Node LTS present" >/dev/null || fail "--audit did not report Node LTS present"
+  fi
   snapshot "$WORK/after-audit"
   diff -u "$WORK/before-audit" "$WORK/after-audit" || fail "--audit changed Homebrew, links, backups, the selection, or the repo"
   ok "--audit is clean and changed nothing"
 }
 
 check_rerun_is_noop() {
-  local newer
+  local newer rerun
   snapshot "$WORK/before-rerun"
   touch "$WORK/marker"
   sleep 1
-  "$REPO/install.sh"
+  rerun=$("$REPO/install.sh") || fail "the rerun failed"
+  printf '%s\n' "$rerun"
+  printf '%s\n' "$rerun" | grep -F "Nothing to do" >/dev/null || fail "the rerun did not print Nothing to do"
   newer=$({
     find "$HOME" -maxdepth 4 \( "${PRUNE[@]}" \) -prune -o -newer "$WORK/marker" -print
     find "$REPO" -name .git -prune -o -newer "$WORK/marker" -print

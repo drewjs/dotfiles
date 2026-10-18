@@ -26,7 +26,7 @@ From a clone:
 ```
 
 - The choice is saved in `~/Library/Application Support/dotfiles/selection`, outside the checkout. The file stores the request (`--profile`, `--only`, `--skip`), not the dependency-expanded set. A bare rerun repeats it. A re-clone on the same Mac still sees it. A bare first run is `--profile full`.
-- `./install.sh --audit` installs nothing and stows nothing. It exits non-zero when a selected Homebrew package is missing, `stow -n` is not clean for the selected packages, or a symlink points into a package that was not selected.
+- `./install.sh --audit` installs nothing and stows nothing. It exits non-zero when a selected Homebrew package is missing, Node LTS is missing while `fnm` is selected, `stow -n` is not clean for the selected packages, or a symlink points into a package that was not selected. A cask already on the Mac outside Homebrew (Chrome or 1Password in `/Applications` or `~/Applications`, or `op` on `PATH`) counts as present. When `fnm` is selected, audit reports Node LTS present or missing.
 - Homebrew installs run with `HOMEBREW_NO_AUTO_UPDATE=1`, so a rerun does not refresh Homebrew.
 - An existing file in the way of a link is moved to `~/.dotfiles-backup/<time>-<pid>/`, never overwritten.
 - Deselecting a tool does not unlink or uninstall it. Run `stow -D <package>` and `brew uninstall` yourself.
