@@ -18,6 +18,7 @@ REPO=''
 PROFILE='' ONLY='' SKIP='' PICK=0 LIST=0 DRY_RUN=0 AUDIT=0 SELECTING=0
 T_NAME=() T_STOW=() T_BREW=() T_NEEDS=() T_PROFILES=() T_ABOUT=()
 SELECTED=''
+NODE_LTS=''
 STOW_PKGS=()
 CHANGES=0
 BACKUP_DIR=''
@@ -264,8 +265,155 @@ ensure_brew() {
   eval "$("$brew" shellenv)"
 }
 
+# A hand-installed cask still counts: Chrome/1Password in /Applications or
+# ~/Applications, and `op` already on PATH. Prints the reason.
+cask_outside_brew() {
+  local token=${1##*/} app
+  case $token in
+    google-chrome) app="Google Chrome.app" ;;
+    1password) app="1Password.app" ;;
+    1password-cli)
+      command -v op >/dev/null 2>&1 || return 1
+      printf '%s\n' "op is already on PATH"
+      return 0
+      ;;
+    *) return 1 ;;
+  esac
+  if [ -d "/Applications/$app" ]; then
+    printf '%s\n' "/Applications/$app is already installed"
+    return 0
+  fi
+  if [ -d "$HOME/Applications/$app" ]; then
+    printf '%s\n' "$HOME/Applications/$app is already installed"
+    return 0
+  fi
+  return 1
+}
+
+wants_formula() {
+  local name=$1 t i p
+  for t in $SELECTED; do
+    i=$(tool_index "$t")
+    for p in ${T_BREW[$i]//,/ }; do
+      [ "${p##*/}" = "$name" ] && return 0
+    done
+  done
+  return 1
+}
+
+# Newest Node release whose index.json lts field is a codename, not false.
+latest_node_lts() {
+  local ver
+  ver=$(
+    curl -fsSL https://nodejs.org/dist/index.json | awk '
+      {
+        n = split($0, parts, "},{")
+        for (i = 1; i <= n; i++) {
+          if (!found && parts[i] ~ /"version":"v[0-9][^"]*"/ && parts[i] ~ /"lts":"/) {
+            s = parts[i]
+            sub(/.*"version":"/, "", s)
+            sub(/".*/, "", s)
+            found = s
+          }
+        }
+      }
+      END {
+        if (found) print found
+        else exit 1
+      }
+    '
+  ) || return 1
+  [ -n "$ver" ] || return 1
+  printf '%s\n' "$ver"
+}
+
+# fnm's own lookup order: $FNM_DIR, XDG data dir, ~/.fnm, then ~/Library.
+fnm_base_dir() {
+  local modern legacy apple
+  if [ -n "${FNM_DIR:-}" ]; then
+    printf '%s\n' "$FNM_DIR"
+    return 0
+  fi
+  if [ -n "${XDG_DATA_HOME:-}" ]; then
+    modern=$XDG_DATA_HOME/fnm
+  else
+    modern=$HOME/.local/share/fnm
+  fi
+  legacy=$HOME/.fnm
+  apple="$HOME/Library/Application Support/fnm"
+  if [ -d "$modern" ]; then
+    printf '%s\n' "$modern"
+    return 0
+  fi
+  if [ -d "$legacy" ]; then
+    printf '%s\n' "$legacy"
+    return 0
+  fi
+  if [ -d "$apple" ]; then
+    printf '%s\n' "$apple"
+    return 0
+  fi
+  return 1
+}
+
+# Sets NODE_LTS. True when that version's directory exists under fnm.
+node_lts_installed() {
+  local base
+  NODE_LTS=$(latest_node_lts) || return 1
+  [ -n "$NODE_LTS" ] || return 1
+  base=$(fnm_base_dir) || return 1
+  [ -d "$base/node-versions/$NODE_LTS" ] || return 1
+  return 0
+}
+
+# True when the fnm default alias points at NODE_LTS. Read-only.
+node_lts_is_default() {
+  local base dest
+  [ -n "$NODE_LTS" ] || return 1
+  base=$(fnm_base_dir) || return 1
+  [ -L "$base/aliases/default" ] || return 1
+  dest=$(readlink "$base/aliases/default") || return 1
+  case $dest in
+    *"/node-versions/$NODE_LTS/installation") return 0 ;;
+  esac
+  return 1
+}
+
+# fnm is a formula on the zsh row. When that formula is selected, install the
+# latest Node LTS and make it the fnm default. A second run with both already
+# true does not call fnm.
+ensure_node_lts() {
+  local installed=0 default=0
+  wants_formula fnm || return 0
+  if ! command -v fnm >/dev/null 2>&1; then
+    if [ "$DRY_RUN" = 1 ]; then
+      say "[dry run] Installing Node LTS"
+      say "[dry run] Setting fnm default to lts-latest"
+      return 0
+    fi
+    die "fnm is selected but not on PATH"
+  fi
+  if node_lts_installed; then installed=1; fi
+  if node_lts_is_default; then default=1; fi
+  if [ "$installed" = 1 ] && [ "$default" = 1 ]; then
+    return 0
+  fi
+  if [ "$installed" = 0 ]; then
+    if act "Installing Node LTS${NODE_LTS:+ ($NODE_LTS)}"; then
+      fnm install --lts
+    fi
+    changed
+  fi
+  if [ "$default" = 0 ]; then
+    if act "Setting fnm default to lts-latest"; then
+      fnm default lts-latest
+    fi
+    changed
+  fi
+}
+
 install_packages() {
-  local have_f='' have_c='' wanted=stow t i p name formulae='' casks='' list=()
+  local have_f='' have_c='' wanted=stow t i p name reason formulae='' casks='' list=()
   if command -v brew >/dev/null; then
     have_f=" $(brew list --formula -1 | tr '\n' ' ') "
     have_c=" $(brew list --cask -1 | tr '\n' ' ') "
@@ -279,7 +427,13 @@ install_packages() {
       -) ;;
       cask:*)
         name=${p#cask:}
-        has "$have_c" "${name##*/}" || has "$casks" "$name" || casks="$casks $name"
+        if has "$have_c" "${name##*/}" || has "$casks" "$name"; then
+          :
+        elif reason=$(cask_outside_brew "$name"); then
+          say "Skipping cask ${name##*/}: $reason"
+        else
+          casks="$casks $name"
+        fi
         ;;
       *) has "$have_f" "${p##*/}" || has "$formulae" "$p" || formulae="$formulae $p" ;;
     esac
@@ -467,10 +621,12 @@ audit_packages() {
       -) ;;
       cask:*)
         name=${p#cask:}
-        has "$have_c" "${name##*/}" || {
+        if has "$have_c" "${name##*/}" || cask_outside_brew "$name" >/dev/null; then
+          :
+        else
           printf 'install.sh: missing cask %s\n' "${name##*/}" >&2
           miss=1
-        }
+        fi
         ;;
       *)
         has "$have_f" "${p##*/}" || {
@@ -481,6 +637,16 @@ audit_packages() {
     esac
   done
   [ "$miss" = 0 ]
+}
+
+audit_node() {
+  wants_formula fnm || return 0
+  if node_lts_installed && node_lts_is_default; then
+    printf 'install.sh: Node LTS present (%s)\n' "$NODE_LTS"
+    return 0
+  fi
+  printf 'install.sh: missing Node LTS\n' >&2
+  return 1
 }
 
 audit_stow() {
@@ -529,6 +695,7 @@ audit_stray() {
 audit() {
   local miss=0
   audit_packages || miss=1
+  audit_node || miss=1
   audit_stow || miss=1
   audit_stray || miss=1
   [ "$miss" = 0 ] || exit 1
@@ -579,6 +746,7 @@ main() {
   [ "$DRY_RUN" = 1 ] || save_state
   ensure_brew
   install_packages
+  ensure_node_lts
   init_submodules
   backup_conflicts
   make_dirs

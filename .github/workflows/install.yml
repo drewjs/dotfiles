@@ -17,12 +17,13 @@ jobs:
       - name: shellcheck
         run: |
           command -v shellcheck >/dev/null || brew install shellcheck
-          shellcheck install.sh .github/scripts/verify-install.sh
+          shellcheck install.sh .github/scripts/verify-install.sh .github/scripts/verify-preinstalled-cask.sh
       - name: Parse with the stock macOS bash 3.2
         run: |
           /bin/bash --version | head -1
           /bin/bash -n install.sh
           /bin/bash -n .github/scripts/verify-install.sh
+          /bin/bash -n .github/scripts/verify-preinstalled-cask.sh
       - name: Validate tools.txt
         run: ./install.sh --list
 
@@ -52,3 +53,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install a subset over the runner's Homebrew, rerun, and check
         run: .github/scripts/verify-install.sh "nvim skhd yabai" --only nvim,skhd
+
+  hand-installed:
+    name: hand-installed app
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create a dummy Google Chrome.app
+        run: sudo mkdir -p "/Applications/Google Chrome.app"
+      - name: Skip that cask, rerun, and audit
+        run: .github/scripts/verify-preinstalled-cask.sh
