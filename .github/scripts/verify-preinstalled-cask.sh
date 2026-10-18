@@ -11,6 +11,12 @@ fail() {
   exit 1
 }
 
+# The runner image may already have the google-chrome cask. Drop that so the
+# app left behind is a hand install, then put the dummy app back.
+if command -v brew >/dev/null 2>&1 && brew list --cask -1 2>/dev/null | grep -qx google-chrome; then
+  brew uninstall --cask --force google-chrome
+fi
+sudo mkdir -p "/Applications/Google Chrome.app"
 [ -d "/Applications/Google Chrome.app" ] || fail "expected /Applications/Google Chrome.app before install"
 
 rm -rf "$HOME/Library/Application Support/dotfiles"

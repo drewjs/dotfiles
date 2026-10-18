@@ -366,15 +366,26 @@ node_lts_installed() {
   return 0
 }
 
-# True when the fnm default alias points at NODE_LTS. Read-only.
+# True when the fnm default alias resolves to NODE_LTS. `fnm default lts-latest`
+# points default at the lts-latest alias, so follow the chain. Read-only.
 node_lts_is_default() {
-  local base dest
+  local base dest hops=0 target
   [ -n "$NODE_LTS" ] || return 1
   base=$(fnm_base_dir) || return 1
-  [ -L "$base/aliases/default" ] || return 1
-  dest=$(readlink "$base/aliases/default") || return 1
+  dest=$base/aliases/default
+  [ -e "$dest" ] || [ -L "$dest" ] || return 1
+  while [ -L "$dest" ] && [ "$hops" -lt 8 ]; do
+    target=$(readlink "$dest") || return 1
+    case $target in
+      /*) dest=$target ;;
+      *) dest=$(dirname "$dest")/$target ;;
+    esac
+    hops=$((hops + 1))
+  done
   case $dest in
-    *"/node-versions/$NODE_LTS/installation") return 0 ;;
+    *"/node-versions/$NODE_LTS/installation" | *"/node-versions/$NODE_LTS/installation/" | *"/node-versions/$NODE_LTS")
+      return 0
+      ;;
   esac
   return 1
 }
