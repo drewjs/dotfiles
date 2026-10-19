@@ -28,8 +28,16 @@ export PATH="$PNPM_HOME:$PATH"
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
-# ── Cargo ─────────────────────────────────────────────
+# ── Rust ──────────────────────────────────────────────
+# rustup is keg-only and ships wrapper scripts directly in its opt bin —
+# it no longer manages proxy symlinks in ~/.cargo/bin.
+export PATH="/opt/homebrew/opt/rustup/bin:$PATH"
 [[ -f "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
+
+# ── Zig ───────────────────────────────────────────────
+# Pinned to 0.15 (keg-only) — termctrl's vendored Ghostty core requires this
+# exact minor version; brew's unversioned zig formula tracks 0.16+.
+export PATH="/opt/homebrew/opt/zig@0.15/bin:$PATH"
 
 # ── fnm (Node) ────────────────────────────────────────
 eval "$(fnm env --use-on-cd)"

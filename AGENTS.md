@@ -37,7 +37,7 @@ Tuned for large monorepos (huge worktree trees beside tiny source trees):
 
 ## Herdr
 
-Mirrors `tmux.conf` binding-for-binding. Validate edits with `herdr config check` —
+Started from `tmux.conf`'s bindings; the adopted config has since diverged. Validate edits with `herdr config check` —
 `herdr --default-config` isn't exhaustive (e.g. `copy_mode`, `swap_pane_*` are undocumented
 there).
 
